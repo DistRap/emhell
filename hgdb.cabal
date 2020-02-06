@@ -1,0 +1,74 @@
+name:           hgdb
+Synopsis:       Gdb monad and repl
+Description:    Gdb monad built around GDB/MI
+category:       Development
+version:        0.1
+license:        BSD3
+license-file:   LICENSE
+author:         Richard Marko <srk@48.io>
+maintainer:     Richard Marko <srk@48.io>
+stability:      provisional
+homepage:       https://github.com/srk/hgdb
+bug-reports:    https://github.com/srk/hgdb/issues
+copyright:      (c) 2020 Richard Marko <srk@48.io>
+build-type:     Simple
+cabal-version:       >=1.10
+
+source-repository head
+  type: git
+  location: git://github.com/distrap/hgdb.git
+
+library
+  build-depends:      base        >= 4 && < 5
+                    , hgdbmi
+                    , stm
+                    , process
+                    , async
+                    , stm
+                    , attoparsec
+                    , bytestring
+                    , mtl
+                    , transformers
+                    , unix
+
+  exposed-modules:    Gdb
+                    , Gdb.Monad
+
+  hs-source-dirs:     src
+  ghc-options:        -Wall
+  default-language:   Haskell2010
+
+-- to ghci use cabal new-repl exe:hgdb
+executable hgdb
+  hs-source-dirs:     app
+  main-is:            Main.hs
+  other-modules:      Box
+                    , Completion
+                    , Selector
+
+  build-depends:      base        >= 4 && < 5
+                    , attoparsec
+                    , bytestring
+                    , hgdb
+                    , boxes
+                    , repline
+                    , haskeline
+                    , data-stm32
+                    , directory
+                    , optparse-applicative
+                    , transformers
+
+test-suite io
+  type:             exitcode-stdio-1.0
+  main-is:          IO.hs
+  other-modules:    Paste
+  hs-source-dirs:   tests
+  ghc-options:      -Wall
+  default-language: Haskell2010
+  build-depends:      base        >= 4 && < 5
+                   ,  hgdb
+                   ,  process
+                   ,  directory
+                   ,  temporary
+                   ,  template-haskell
+
