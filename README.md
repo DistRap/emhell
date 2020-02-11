@@ -100,7 +100,7 @@ Build with Nix via [ivory-tower-nix](https://github.com/HaskellEmbedded/ivory-to
 by running
 
 ```bash
-nix-shell -A hgdb default.nix
+nix-build -A hgdb
 ```
 
 Notes
