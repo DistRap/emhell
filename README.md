@@ -109,3 +109,8 @@ Notes
 The interface is not final and will probably change. With more recent Gdb than
 currently available on distributions we could also do completion for function names
 and variables (requires `-symbol-list-functions` and `-symbol-list-variables`).
+
+Demo
+-----
+
+[![asciicast](https://asciinema.org/a/300226.svg)](https://asciinema.org/a/300226)
