@@ -2,7 +2,7 @@ hgdb
 ====
 
 Gdb monad and REPL for reading and decoding registers built
-around [hgdbmi](https://github.com/distrap/hgdmi)
+around [hgdbmi](https://github.com/distrap/hgdbmi)
 
 Usage
 -----
