@@ -255,6 +255,7 @@ extRemote prog = do
   cli "monitor swdp_scan"
   cli "monitor connect_srs disable"
   cli "set mem inaccessible-by-default off"
+  cmd' R.RCDone $ C.gdb_set "mem inaccessible-by-default off"
   _ <- cmd R.RCDone $ C.target_attach (Left 1)
   return ()
 
