@@ -71,7 +71,10 @@ withGDB config act = liftIO $ do
   ctx <- G.setup config (callback stops streamQ notifQ)
 
   a <- async $ do
-    x <- try $ sigintHandler $ flip runReaderT (GDBContext ctx stops userQ) act
+    x <- try
+      $ sigintHandler
+      $ flip runReaderT (GDBContext ctx stops userQ) act
+
     case x of
       Left e -> return $ Left $ show (e :: SomeException)
       Right r -> return $ Right r
