@@ -251,6 +251,7 @@ toTarget (BMPHosted host port) = C.TcpHost host port
 
 extRemote :: (MonadIO m) => Programmer -> GdbT m ()
 extRemote prog = do
+  cmd' R.RCDone $ C.gdb_set "mi-async on"
   _ <- cmd R.RCConnected $ C.target_select $ C.ExtendedRemote $ toTarget prog
   cli "monitor swdp_scan"
   cli "monitor connect_srs disable"
