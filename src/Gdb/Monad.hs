@@ -153,6 +153,11 @@ continue :: (MonadIO m) => GdbT m ()
 continue = do
   cmd' R.RCRunning $ C.exec_continue
 
+-- |Interrupt background execution of the target
+interrupt :: (MonadIO m) => GdbT m ()
+interrupt = do
+  cmd' R.RCDone $ C.exec_interrupt (Left True) -- --all
+
 -- |Wait for stop condition (e.g. breakpoint)
 waitStop :: (MonadIO m) => GdbT m [S.Stopped]
 waitStop = do
