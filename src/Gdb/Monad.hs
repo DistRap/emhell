@@ -32,6 +32,9 @@ defaultConfig = G.Config ["gdb"] (Just "gdb.log")
 armConfig :: G.Config
 armConfig = G.Config ["arm-none-eabi-gdb"] (Just "gdb.log")
 
+tcpConfig :: String -> Int -> G.Config
+tcpConfig host port = G.ConfigTCP host port (Just "gdb-tcp.log")
+
 runGdb :: (MonadIO m) => (GdbMonad a) -> m (Either String a)
 runGdb = runGdbConfig defaultConfig
 
