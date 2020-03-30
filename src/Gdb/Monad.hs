@@ -168,7 +168,12 @@ interrupt = do
 waitStop :: (MonadIO m) => GdbT m [S.Stopped]
 waitStop = do
   tmvar <- fmap contextStops ask
-  stops <- liftIO $ atomically $ takeTMVar tmvar
+
+  _flushedOldStops <- liftIO $ atomically $ do
+    tryTakeTMVar tmvar
+
+  stops <- liftIO $ atomically $ do
+    takeTMVar tmvar
   return stops
 
 -- |Did we stop due to breakpoint
