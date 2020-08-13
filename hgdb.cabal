@@ -1,7 +1,7 @@
 name:           hgdb
 Synopsis:       Gdb monad and repl
 Description:    Gdb monad built around GDB/MI
-category:       Development
+category:       Embedded
 version:        0.1
 license:        BSD3
 license-file:   LICENSE
