@@ -35,12 +35,12 @@ armConfig = G.Config ["arm-none-eabi-gdb"] (Just "gdb.log")
 tcpConfig :: String -> Int -> G.Config
 tcpConfig host port = G.ConfigTCP host port (Just "gdb-tcp.log")
 
-runGdb :: (MonadIO m) => (GdbMonad a) -> m (Either String a)
+runGdb :: (MonadIO m) => (GdbT m a) -> m (Either String a)
 runGdb = runGdbConfig defaultConfig
 
 runGdbConfig :: MonadIO m
              => G.Config
-             -> GdbMonad b
+             -> GdbT m b
              -> m (Either String b)
 runGdbConfig config act = withGDB config act
 
@@ -50,8 +50,26 @@ sigintHandler ofWhat = do
     bracket (installHandler sigINT (Catch $ throwTo tid UserInterrupt) Nothing)
         (\old -> installHandler sigINT old Nothing) $ pure $ ofWhat
 
-withGDB :: MonadIO m => G.Config -> GdbMonad b -> m (Either String b)
-withGDB config act = liftIO $ do
+-- | Set-up GDB connection and run `GdbT` application
+withGDB :: MonadIO m => G.Config -> GdbT m b -> m (Either String b)
+withGDB config act = do
+  (stops, streamQ, notifQ, userQ) <- liftIO $ do
+    stops <- atomically $ newEmptyTMVar
+    (streamQ, notifQ, userQ) <- atomically $ (,,)
+      <$> newTBQueue 1000
+      <*> newTBQueue 1000
+      <*> newTBQueue 1000
+    return (stops, streamQ, notifQ, userQ)
+  ctx <- liftIO $ G.setup config (callbackQueues stops streamQ notifQ)
+
+  x <- flip runReaderT (GDBContext ctx stops userQ) act
+  liftIO $ G.shutdown ctx
+  return $ Right x
+
+-- | `withGdb` variant that prints data from queues, installs `sigintHandler`
+-- and prints all logs at the end
+withGDB' :: MonadIO m => G.Config -> GdbT IO b -> m (Either String b)
+withGDB' config act = liftIO $ do
   stops <- atomically $ newEmptyTMVar
   (streamQ, notifQ, userQ) <- atomically $ (,,)
     <$> newTBQueue 1000
@@ -68,18 +86,15 @@ withGDB config act = liftIO $ do
     q <- atomically $ readTBQueue userQ
     withMVar lock $ const $ putStrLn q
 
-  ctx <- G.setup config (callback stops streamQ notifQ)
+  ctx <- G.setup config (callbackQueues stops streamQ notifQ)
 
-  a <- async $ do
-    x <- try
-      $ sigintHandler
-      $ flip runReaderT (GDBContext ctx stops userQ) act
+  x <- try
+    $ sigintHandler
+    $ flip runReaderT (GDBContext ctx stops userQ) act
 
-    case x of
-      Left e -> return $ Left $ show (e :: SomeException)
-      Right r -> return $ Right r
-
-  res <- wait a
+  res <- case x of
+    Left e -> return $ Left $ show (e :: SomeException)
+    Right r -> return $ Right r
 
   G.shutdown ctx
 
@@ -94,13 +109,13 @@ withGDB config act = liftIO $ do
     pstream' (R.Stream _ s) = putStr s
     pstream = mapM_ pstream'
 
-    callback :: TMVar [S.Stopped] -> TBQueue [R.Stream] -> TBQueue [R.Notification] -> G.Callback
-    callback mv logs events = G.Callback
-      (toQueue logs)
-      (toQueue events)
-      (Just (atomically . putTMVar mv))
-      where
-        toQueue q = atomically . writeTBQueue q
+callbackQueues :: TMVar [S.Stopped] -> TBQueue [R.Stream] -> TBQueue [R.Notification] -> G.Callback
+callbackQueues mv logs events = G.Callback
+  (toQueue logs)
+  (toQueue events)
+  (Just (atomically . putTMVar mv))
+  where
+    toQueue q = atomically . writeTBQueue q
 
 -- |Send GDB-MI command and fail if response differs from
 -- expected response `rc`
