@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 module Main where
 
 import Prelude hiding (break)
@@ -15,8 +16,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.State.Strict
 import Control.Monad.Trans.Reader
 
-import System.Console.Repline
-import System.Console.Haskeline.MonadException hiding (throwTo)
+import System.Console.Repline hiding (options)
 import System.Directory
 
 import Gdb
@@ -99,12 +99,21 @@ main = do
 
 runRepl :: StateT (Maybe Device) (GdbT IO) ()
 runRepl = do
-    evalRepl (pure "λ> ")
+    evalRepl
+      banner
       (replCmd)
       options
       (Just ':')
+      (Just "paste")
       (Prefix (\x -> (compFunc $ svdCompleterMay) x ) (defaultMatcher))
-      (return ())
+      greeter
+      finalizer
+  where
+    banner = pure . \case
+      SingleLine -> "hgdb> "
+      MultiLine -> "| "
+    greeter = liftIO $ putStrLn "Welcome to hgdb"
+    finalizer = return Exit
 
 replCmd :: String -> Repl ()
 replCmd input = lift $ do
@@ -123,11 +132,11 @@ replCmd input = lift $ do
               let Right reg = getPeriphReg (selPeriph sel) (selReg sel) dev
               liftIO $ prettyRegister (x :: Word32) regAddr reg
 
-wait :: [String] -> Repl ()
+wait :: String -> Repl ()
 wait _args = liftGdb $ waitStop >>= showStops
 
-loadSVD :: [String] -> Repl ()
-loadSVD [fp] = do
+loadSVD :: String -> Repl ()
+loadSVD fp = do
   liftIO $ putStrLn $ "Loading SVD file " ++ fp
   x <- liftIO $ parseSVDPeripherals fp
   case x of
@@ -145,7 +154,7 @@ interruptible act _args = do
       -- if user hits Ctr-C we propagate it to GDB and wait for stops response
       liftGdb break
       wait []
-      return $ Left $ show (e :: SomeException)
+      return $ Left $ show (e :: E.SomeException)
     Right r -> return $ Right r
 
   return ()
@@ -161,10 +170,9 @@ liftGdb :: (MonadTrans t1, MonadTrans t2, Monad m, Monad (t2 m))
         -> t1 (t2 m) a
 liftGdb fn = lift . lift $ fn
 
-fileArg fn [x] = liftGdb $ fn x
-fileArg fn _ = liftGdb $ echo "Requires FILE argument"
+fileArg fn x = liftGdb $ fn x
 
-options :: [(String, [String] -> Repl ())]
+options :: [(String, String -> Repl ())]
 options = [
     ("svd", loadSVD)
   , ("file", fileArg $ file)

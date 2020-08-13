@@ -51,7 +51,7 @@ executable hgdb
                     , bytestring
                     , hgdb
                     , boxes
-                    , repline
+                    , repline >= 0.4.0.0 && < 0.5
                     , haskeline
                     , data-stm32
                     , directory
