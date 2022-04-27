@@ -5,6 +5,7 @@ module Main where
 import Prelude hiding (break)
 
 import Data.Bits
+import Data.Default.Class
 import Data.Word
 import Text.Printf
 
@@ -74,7 +75,7 @@ main = do
       x <- parseSVDPeripherals fp
       case x of
         Left err -> putStrLn err >> return Nothing
-        Right s -> return $ Just $ defaultDevice { devicePeripherals = s }
+        Right s -> return $ Just $ def { devicePeripherals = s }
 
 
   runGdbConfig cfg $ do
@@ -141,7 +142,7 @@ loadSVD fp = do
   x <- liftIO $ parseSVDPeripherals fp
   case x of
     Left err -> liftIO $ putStrLn err
-    Right s -> lift $ put $ Just $ defaultDevice { devicePeripherals = s }
+    Right s -> lift $ put $ Just $ def { devicePeripherals = s }
 loadSVD _ = liftIO $ putStrLn "Requires path to SVD file"
 
 -- does make sense only when GDB is running, add continue >> act??

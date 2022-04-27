@@ -54,6 +54,7 @@ executable hgdb
                     , repline >= 0.4.0.0 && < 0.5
                     , haskeline
                     , data-stm32
+                    , data-default-class
                     , directory
                     , optparse-applicative
                     , transformers
