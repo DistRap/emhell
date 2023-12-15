@@ -1,18 +1,22 @@
+cabal-version:  2.2
 name:           hgdb
 Synopsis:       Gdb monad and repl
 Description:    Gdb monad built around GDB/MI
 category:       Embedded
 version:        0.1
-license:        BSD3
+license:        BSD-3-Clause
 license-file:   LICENSE
-author:         Richard Marko <srk@48.io>
-maintainer:     Richard Marko <srk@48.io>
+author:         sorki <srk@48.io>
+maintainer:     sorki <srk@48.io>
 stability:      provisional
 homepage:       https://github.com/srk/hgdb
 bug-reports:    https://github.com/srk/hgdb/issues
-copyright:      (c) 2020 Richard Marko <srk@48.io>
+copyright:      (c) 2020 sorki <srk@48.io>
 build-type:     Simple
-cabal-version:       >=1.10
+extra-source-files:
+    CHANGELOG.md
+    LICENSE
+    README.md
 
 source-repository head
   type: git
