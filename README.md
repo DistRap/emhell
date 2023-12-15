@@ -1,11 +1,9 @@
-hgdb
-====
+# hgdb
 
 Gdb monad and REPL for reading and decoding registers built
 around [hgdbmi](https://github.com/distrap/hgdbmi)
 
-Usage
------
+## Usage
 
 ```haskell
 import Gdb
@@ -20,8 +18,7 @@ main = do
     echo $ show stopped
 ```
 
-`hgdb` application
-------------------
+## `hgdb` application
 
 Provided `hgdb` application is a proof of concept register viewer
 utilizing repline for readline REPL allowing ad-hoc inspection
@@ -32,15 +29,14 @@ You can obtain SVD files from following repositories:
 * [ada2svd](https://github.com/AdaCore/svd2ada/) (contains generic periherals for various Cortex-Ms)
 * [cmsis-svd](https://github.com/posborne/cmsis-svd)
 
-Or from [data-stm32](https://github.com/HaskellEmbedded/data-stm32) 
+Or from [data-stm32](https://github.com/HaskellEmbedded/data-stm32)
 repository root (ST only) with:
 
 ```bash
 nix-build nix -A svdDb
 ```
 
-Inspecting registers
-====================
+### Inspecting registers
 
 To use `arm-none-eabi-gdb` with [BlackMagicProbe](https://github.com/blacksphere/blackmagic)
 available via `/dev/bmp` launch `hgdb` in following manner
@@ -72,8 +68,7 @@ Bit 2 SLEEPDEEP
 +-------+---------+-+---------+-----------+-+
 ```
 
-Command line options
-====================
+### Command line options
 
 * `-e | --ex` behaves like `gdb --ex`
 * `--svd` specifies SVD file to load on start
@@ -84,8 +79,7 @@ Command line options
 
 For full list refer to `hgdb --help`
 
-Internal commands
-=================
+### Internal commands
 
 * `:svd` - load SVD file, can be used instead of `--svd` arguments or to change current SVD file
 * `:file` - load file to Gdb
@@ -93,8 +87,7 @@ Internal commands
 All other REPL commands are forward to Gdb as CLI input.
 
 
-Build
------
+## Build
 
 Build with Nix via [ivory-tower-nix](https://github.com/HaskellEmbedded/ivory-tower-nix/)
 by running
@@ -103,14 +96,12 @@ by running
 nix-build -A hgdb
 ```
 
-Notes
------
+## Notes
 
 The interface is not final and will probably change. With more recent Gdb than
 currently available on distributions we could also do completion for function names
 and variables (requires `-symbol-list-functions` and `-symbol-list-variables`).
 
-Demo
------
+## Demo
 
 [![asciicast](https://asciinema.org/a/300226.svg)](https://asciinema.org/a/300226)
