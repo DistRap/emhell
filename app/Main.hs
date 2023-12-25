@@ -21,42 +21,16 @@ import System.Console.Repline hiding (options)
 import System.Directory
 
 import Gdb
-import Data.SVD
-import Data.Bits.Pretty
+import Data.SVD.Types (Device)
+import qualified Data.SVD.IO
+import qualified Data.SVD.Pretty.Explore
+import qualified Data.SVD.Util
 
-import Box
 import Completion
 import Options
 import Selector
 
 type Repl a = HaskelineT (StateT (Maybe Device) (GdbT IO)) a
-
-prettyRegister :: (PrintfArg a, FiniteBits a, Show a, Integral a)
-               => a
-               -> Int
-               -> Register
-               -> IO ()
-prettyRegister x addr reg = do
-  putStrLn $ "Register " ++ regName reg
-  putStrLn $ "- " ++ regDescription reg
-  let a = showHex (fromIntegral addr :: Word32)
-      b = showHex (fromIntegral (regAddressOffset reg) :: Word8)
-  putStrLn $ "- Address " ++ a ++ " (including offset " ++ b ++ ")"
-  putStrLn ""
-
-  case x of
-    0 -> putStrLn "(Just zeros)"
-    _ -> do
-
-      putStrLn $ showDec x
-      putStrLn $ showHex x
-      putStrLn $ showBin x
-      putStrLn $ "0b" ++ showBinGroups 4 x
-
-      putStrLn $ printSetFields $ getProcdFieldValues x reg
-
-  putStrLn ""
-  renderFields $ getProcdFieldValues (x) reg
 
 main = do
   opts <- runOpts
@@ -72,10 +46,10 @@ main = do
     Nothing -> return Nothing
     Just fp -> do
       liftIO $ putStrLn $ "Loading SVD file " ++ fp
-      x <- parseSVDPeripherals fp
+      x <- Data.SVD.IO.parseSVD fp
       case x of
         Left err -> putStrLn err >> return Nothing
-        Right s -> return $ Just $ def { devicePeripherals = s }
+        Right dev -> return $ Just dev
 
 
   runGdbConfig cfg $ do
@@ -126,12 +100,12 @@ replCmd input = lift $ do
         Left _e -> do
           lift $ cli input
         Right sel -> do
-          case getPeriphRegAddr (selPeriph sel) (selReg sel) dev of
+          case Data.SVD.Util.getPeriphRegAddr (selPeriph sel) (selReg sel) dev of
             Left e -> lift $ echo e
             Right regAddr -> do
               (Just x) <- lift $ readMem regAddr 4
-              let Right reg = getPeriphReg (selPeriph sel) (selReg sel) dev
-              liftIO $ prettyRegister (x :: Word32) regAddr reg
+              let Right reg = Data.SVD.Util.getPeriphReg (selPeriph sel) (selReg sel) dev
+              liftIO $ Data.SVD.Pretty.Explore.exploreRegister (x :: Word32) regAddr reg
 
 wait :: String -> Repl ()
 wait _args = liftGdb $ waitStop >>= showStops
@@ -139,11 +113,10 @@ wait _args = liftGdb $ waitStop >>= showStops
 loadSVD :: String -> Repl ()
 loadSVD fp = do
   liftIO $ putStrLn $ "Loading SVD file " ++ fp
-  x <- liftIO $ parseSVDPeripherals fp
+  x <- liftIO $ Data.SVD.IO.parseSVD fp
   case x of
     Left err -> liftIO $ putStrLn err
-    Right s -> lift $ put $ Just $ def { devicePeripherals = s }
-loadSVD _ = liftIO $ putStrLn "Requires path to SVD file"
+    Right d -> lift $ put $ Just d
 
 -- does make sense only when GDB is running, add continue >> act??
 interruptible :: Show b => GdbT IO b -> a -> Repl ()

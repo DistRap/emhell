@@ -14,7 +14,13 @@ import Data.Maybe
 import Data.Attoparsec.ByteString.Char8
 import qualified Data.ByteString.Char8 as B
 
-import Data.SVD.Types
+import Data.SVD
+  ( Device(..)
+  , Field(..)
+  , Peripheral(..)
+  , Register(..)
+  )
+import qualified Data.SVD
 
 import System.Console.Haskeline.Completion
 
@@ -39,10 +45,10 @@ notFinished x = x { isFinished = False }
 svdCompleter :: Monad m => Device -> String -> m [String]
 svdCompleter dev x = nestedCompleter (map (periphName) $ devicePeripherals dev) x $
   \(complete, leftover) -> do
-    let f = (fromRight [] $ getPeriphRegs complete dev)
+    let f = (fromRight [] $ Data.SVD.getPeriphRegs complete dev)
     nestedCompleter (map regName f) leftover $
       \(complete2, leftover2) -> do
-        let f = (fromRight [] $ getPeriphRegFields complete complete2 dev)
+        let f = (fromRight [] $ Data.SVD.getPeriphRegFields complete complete2 dev)
         nestedCompleter (map fieldName f) leftover2 $ \_ ->
           return []
 

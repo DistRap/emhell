@@ -46,9 +46,9 @@ library
 executable hgdb
   hs-source-dirs:     app
   main-is:            Main.hs
-  other-modules:      Box
-                    , Completion
-                    , Selector
+  other-modules:      Completion
+                      Options
+                      Selector
 
   build-depends:      base        >= 4 && < 5
                     , attoparsec
@@ -57,8 +57,8 @@ executable hgdb
                     , boxes
                     , repline >= 0.4.0.0 && < 0.5
                     , haskeline
-                    , data-stm32
                     , data-default-class
+                    , data-svd
                     , directory
                     , optparse-applicative
                     , transformers
