@@ -28,7 +28,7 @@ To use `arm-none-eabi-gdb` with [BlackMagicProbe](https://github.com/blacksphere
 available via `/dev/bmp` launch `hgdb` in following manner
 
 ```
-hgdb --arm --bmp /dev/bmp --svd ~/svd2ada/CMSIS-SVD/Cortex_M/cm4f.svd
+hgdb --arm --bmp /dev/bmp --svd stm32f407.svd
 ```
 
 You can then inspect registers via REPL using their names
