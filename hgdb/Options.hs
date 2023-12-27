@@ -2,6 +2,7 @@ module Options where
 
 import Gdb (Programmer(..))
 import Options.Applicative
+import qualified EmHell.Options
 import qualified EmHell.Parsers
 
 data Options = Options {
@@ -48,10 +49,7 @@ parseOptions = Options <$>
           long "milog"
        <> metavar "FILE"
        <> help "Log Gdb/MI session to FILE")
-  <*> optional (strOption $
-          long "svd"
-       <> metavar "XML"
-       <> help "Load software vendor description XML file")
+  <*> optional EmHell.Options.parseSVD
   <*> optional (strOption $
           long "cwd"
        <> metavar "DIR"

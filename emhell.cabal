@@ -40,6 +40,7 @@ library
                     , transformers
                     , unix
   exposed-modules:    EmHell
+                    , EmHell.Options
                     , EmHell.Parsers
                     , EmHell.SigintHandler
                     , EmHell.SVD.Completion
