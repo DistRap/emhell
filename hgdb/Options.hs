@@ -1,13 +1,8 @@
 module Options where
 
-import Gdb
-
+import Gdb (Programmer(..))
 import Options.Applicative
-import qualified Data.Attoparsec.ByteString.Char8 as A
-import qualified Data.ByteString.Char8 as B
-
-attoReadM :: A.Parser a -> ReadM a
-attoReadM p = eitherReader (A.parseOnly p . B.pack)
+import qualified EmHell.Parsers
 
 data Options = Options {
     optsProg  :: Maybe Programmer
@@ -19,34 +14,28 @@ data Options = Options {
   , optsEx    :: [String]
   } deriving (Show)
 
-parseAddress :: A.Parser String
-parseAddress = B.unpack <$> A.takeWhile (/=':')
-
-parsePort :: A.Parser Int
-parsePort = do
-  _ <- A.char ':'
-  d <- A.decimal
-  return d
-
-hostPort :: A.Parser (String, Int)
-hostPort = (,) <$> parseAddress <*> parsePort
-
 parseProgrammer :: Parser Programmer
 parseProgrammer =
-   (BMP <$> strOption (
-         long "bmp"
+   (BMP <$> strOption
+      (  long "bmp"
       <> metavar "DEV"
-      <> help "Use BlackMagic Probe at DEV"))
+      <> help "Use BlackMagic Probe at DEV"
+      )
+   )
  <|>
-   (uncurry BMPHosted <$> option (attoReadM hostPort) (
-         long "bmphosted"
+   (uncurry BMPHosted <$> option (EmHell.Parsers.hostPort)
+      (  long "bmphosted"
       <> metavar "HOST:PORT"
-      <> help "Use hosted BlackMagic Probe at HOST:PORT"))
+      <> help "Use hosted BlackMagic Probe at HOST:PORT"
+      )
+   )
  <|>
-   (uncurry RemoteGDB <$> option (attoReadM hostPort) (
-         long "remotegdb"
+   (uncurry RemoteGDB <$> option (EmHell.Parsers.hostPort)
+      (  long "remotegdb"
       <> metavar "HOST:PORT"
-      <> help "Use remote GDB server at HOST:PORT"))
+      <> help "Use remote GDB server at HOST:PORT"
+      )
+   )
 
 parseOptions :: Parser Options
 parseOptions = Options <$>

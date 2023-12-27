@@ -35,10 +35,12 @@ library
                     , attoparsec
                     , data-svd
                     , haskeline
+                    , optparse-applicative
                     , text
                     , transformers
                     , unix
   exposed-modules:    EmHell
+                    , EmHell.Parsers
                     , EmHell.SigintHandler
                     , EmHell.SVD.Completion
                     , EmHell.SVD.Selector
