@@ -50,11 +50,23 @@ library
   ghc-options:        -Wall
   default-language:   Haskell2010
 
+-- to ghci use cabal new-repl exe:emhell
+executable emhell
+  ghc-options:        -Wall -Wunused-packages
+  hs-source-dirs:     emhell
+  main-is:            Main.hs
+  build-depends:      base >= 4 && < 5
+                    , emhell
+                    , repline >= 0.4.0.0 && < 0.5
+                    , data-svd
+                    , optparse-applicative
+                    , transformers
+
 -- to ghci use cabal new-repl exe:hgdb
 executable hgdb
   if !flag(hgdb)
     buildable: False
-  ghc-options:        -Wall
+  ghc-options:        -Wall -Wunused-packages
   hs-source-dirs:     hgdb
   main-is:            Main.hs
   other-modules:      Options
