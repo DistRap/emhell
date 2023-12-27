@@ -9,8 +9,8 @@ license-file:   LICENSE
 author:         sorki <srk@48.io>
 maintainer:     sorki <srk@48.io>
 stability:      provisional
-homepage:       https://github.com/srk/emhell
-bug-reports:    https://github.com/srk/emhell/issues
+homepage:       https://github.com/DistRap/emhell
+bug-reports:    https://github.com/DistRap/emhell/issues
 copyright:      (c) 2020 sorki <srk@48.io>
 build-type:     Simple
 extra-source-files:
