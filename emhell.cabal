@@ -60,6 +60,7 @@ executable emhell
                     , data-svd >= 0.1.1
                     , optparse-applicative
                     , transformers
+  default-language:   Haskell2010
 
 -- to ghci use cabal new-repl exe:hgdb
 executable hgdb
@@ -79,6 +80,7 @@ executable hgdb
                     , directory
                     , optparse-applicative
                     , transformers
+  default-language:   Haskell2010
 
 -- to ghci use cabal new-repl exe:hocd
 executable hocd
@@ -93,3 +95,4 @@ executable hocd
                     , data-svd
                     , optparse-applicative
                     , transformers
+  default-language:   Haskell2010
