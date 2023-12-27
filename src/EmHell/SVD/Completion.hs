@@ -1,13 +1,10 @@
 module EmHell.SVD.Completion
   ( svdCompleter
   , svdCompleterFields
-  , svdCompleterMay
   , compFunc
   ) where
 
 import Control.Applicative (optional)
-import Control.Monad.Trans.State.Strict (StateT, get)
-
 import Data.Attoparsec.Text (Parser)
 import Data.SVD
   ( Device(..)
@@ -34,16 +31,6 @@ parsePart :: Parser Text
 parsePart =
   Data.Attoparsec.Text.takeWhile1 (/='.')
   <* (optional $ Data.Attoparsec.Text.char '.')
-
-svdCompleterMay
-  :: Monad m
-  => String
-  -> StateT (Maybe Device) m [String]
-svdCompleterMay x = do
-  s <- get
-  case s of
-    Nothing -> pure mempty
-    Just dev -> svdCompleter dev x
 
 compFunc
   :: Monad m

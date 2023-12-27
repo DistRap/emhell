@@ -37,7 +37,6 @@ library
                     , haskeline
                     , optparse-applicative
                     , text
-                    , transformers
                     , unix
   exposed-modules:    EmHell
                     , EmHell.Options

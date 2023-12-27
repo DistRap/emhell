@@ -102,7 +102,7 @@ runRepl = do
     (Prefix
       (\x ->
         ( EmHell.SVD.Completion.compFunc
-          EmHell.SVD.Completion.svdCompleterMay
+          svdCompleterMay
         )
         x
       )
@@ -122,6 +122,17 @@ runRepl = do
       $ putStrLn "Welcome to hgdb"
 
     finalizer = pure Exit
+
+    svdCompleterMay
+      :: Monad m
+      => String
+      -> StateT (Maybe Device) m [String]
+    svdCompleterMay x = do
+      s <- get
+      case s of
+        Nothing -> pure mempty
+        Just dev ->
+          EmHell.SVD.Completion.svdCompleter dev x
 
 replCmd :: String -> Repl ()
 replCmd input = lift $ do
