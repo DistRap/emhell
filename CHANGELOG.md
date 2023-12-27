@@ -1,4 +1,4 @@
-# Version [0.1.0.0](https://github.com/DistRap/emhell/compare/0.1.0.0...0.1.1.0) (2023-MM-DD)
+# Version [0.1.0.0](https://github.com/DistRap/emhell/compare/d236297...0.1.0.0) (2023-12-27)
 
 * Initial release
 
