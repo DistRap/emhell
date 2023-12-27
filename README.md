@@ -1,14 +1,24 @@
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/DistRap/emhell/ci.yaml?branch=main)](https://github.com/DistRap/emhell/actions/workflows/ci.yaml)
+[![Hackage version](https://img.shields.io/hackage/v/emhell.svg?color=success)](https://hackage.haskell.org/package/emhell)
+[![Dependencies](https://img.shields.io/hackage-deps/v/emhell?label=Dependencies)](https://packdeps.haskellers.com/feed?needle=emhell)
+
 # emhell
 
 Embedded development could be hell without a good tooling!
 
 ## `emhell` application
 
-Provided `emhell` application is a SVD (System View Description) register browser.
+`emhell` is a SVD (System View Description) register browser.
+
+## `hocd` application
+
+`hocd` is a register viewer utilizing OpenOCD as a backend
+using [`hocd`](https://github.com/DistRap/hocd).
 
 ## `hgdb` application
 
-`hgdb` is a register viewer and a `GDB` frontend.
+`hgdb` is a register viewer and a `GDB` frontend,
+built on top [`hgdbmi`](https://github.com/DistRap/hgdbmi).
 
 ### Inspecting registers
 
@@ -62,6 +72,15 @@ For full list refer to `hgdb --help`
 All other REPL commands are forwarded to Gdb as CLI input.
 
 ## Build
+
+### Using Cabal
+
+```bash
+git clone https://github.com/DistRap/emhell
+cabal build
+```
+
+### Using Nix
 
 Build with Nix via [ivory-tower-nix](https://github.com/HaskellEmbedded/ivory-tower-nix/)
 by running
