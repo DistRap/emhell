@@ -35,47 +35,57 @@ import System.Posix.Signals (Handler(Catch))
 import qualified Control.Exception
 import qualified System.Posix.Signals
 
-type Repl a = HaskelineT (StateT (Maybe Device) (GDBT IO)) a
+type Repl a =
+  HaskelineT
+    (StateT (Maybe Device)
+      (GDBT IO)
+    ) a
 
+main :: IO ()
 main = do
   opts <- runOpts
 
-  let gdbConfig = if optsArm opts then armConfig else def
-      cfg = gdbConfig { confLogfile = optsMILog opts }
+  let gdbConfig =
+        if optsArm opts
+        then armConfig
+        else def
+      cfg =
+        gdbConfig
+          { confLogfile = optsMILog opts }
 
   case optsCwd opts of
-    Nothing -> return ()
-    Just pth -> setCurrentDirectory pth -- "/home/srk/git/ivory-tower-helloworld"
+    Nothing -> pure ()
+    Just pth -> setCurrentDirectory pth
 
   dev <- case optsSVD opts of
-    Nothing -> return Nothing
+    Nothing -> pure Nothing
     Just fp -> do
-      liftIO $ putStrLn $ "Loading SVD file " ++ fp
+      liftIO
+        $ putStrLn
+        $ "Loading SVD file " <> fp
+
       x <- Data.SVD.IO.parseSVD fp
       case x of
-        Left err -> putStrLn err >> return Nothing
-        Right dev -> return $ Just dev
-
+        Left err ->
+          putStrLn err >> pure Nothing
+        Right dev ->
+          pure $ pure dev
 
   runGDBConfig cfg $ do
-    maybe (return ()) file (optsFile opts)
-    maybe (return ()) extRemote (optsProg opts)
-    forM_ (optsEx opts) $ \x -> cli x
+    maybe (pure ()) file (optsFile opts)
+    maybe (pure ()) extRemote (optsProg opts)
+    -- execute extra --ex cli commands
+    forM_ (optsEx opts) cli
 
-    --breakpoint $ C.function_location "callback_extint_handle_4_thread_signal_EXTI15_10_IRQHandler"
-    --run
-    {--
-    forever $ do
-      onBreak $ \b -> do
-        val <- eval "xcnt_4"
-        echo val
-    --}
     break
 
     -- to avoid printing prompt during gdb log output
     liftIO $ threadDelay 1000000
-    void $ flip runStateT dev $ runRepl
+    void
+      $ (`runStateT` dev)
+      $ runRepl
 
+  pure ()
 
 runRepl :: StateT (Maybe Device) (GDBT IO) ()
 runRepl = do
@@ -89,11 +99,17 @@ runRepl = do
       greeter
       finalizer
   where
-    banner = pure . \case
-      SingleLine -> "hgdb> "
-      MultiLine -> "| "
-    greeter = liftIO $ putStrLn "Welcome to hgdb"
-    finalizer = return Exit
+    banner =
+        pure
+      . \case
+          SingleLine -> "hgdb> "
+          MultiLine -> "| "
+
+    greeter =
+      liftIO
+      $ putStrLn "Welcome to hgdb"
+
+    finalizer = pure Exit
 
 replCmd :: String -> Repl ()
 replCmd input = lift $ do
@@ -129,10 +145,18 @@ replCmd input = lift $ do
 wait :: String -> Repl ()
 wait _args = liftGdb $ waitStop >>= showStops
 
+-- Repl command, that loads SVD
+-- and puts @Device@ into repl state
 loadSVD :: String -> Repl ()
 loadSVD fp = do
-  liftIO $ putStrLn $ "Loading SVD file " ++ fp
-  x <- liftIO $ Data.SVD.IO.parseSVD fp
+  liftIO
+    $ putStrLn
+    $ "Loading SVD file " <> fp
+
+  x <-
+    liftIO
+      $ Data.SVD.IO.parseSVD fp
+
   case x of
     Left err -> liftIO $ putStrLn err
     Right d -> lift $ put $ Just d
@@ -142,18 +166,16 @@ interruptible :: Show b => GDBT IO b -> a -> Repl ()
 interruptible act _args = do
   ctx <- liftGdb getContext
   x <- liftIO $ E.try $ sigintHandler $ runGDBT ctx act
-  _ <- case x of
+  case x of
     Left e -> do
       -- if user hits Ctr-C we propagate it to GDB and wait for stops response
-      liftIO $ print e
-      liftIO $ print "sending break"
       liftGdb break
-      liftIO $ print "nowait"
-      --wait []
-      return $ Left $ show (e :: E.SomeException)
-    Right r -> return $ Right r
+      -- this used to be, but why
+      -- wait []
+      pure $ Left $ show (e :: E.SomeException)
+    Right r -> pure $ Right r
 
-  return ()
+  pure ()
 
 defaultMatcher :: [(String, CompletionFunc (StateT (Maybe Device) (GDBT IO)))]
 defaultMatcher =
@@ -171,12 +193,10 @@ liftGdb
   -> t1 (t2 m) a
 liftGdb fn = lift . lift $ fn
 
-fileArg fn x = liftGdb $ fn x
-
 options :: [(String, String -> Repl ())]
 options = [
     ("svd", loadSVD)
-  , ("file", fileArg $ file)
+  , ("file", liftGdb . file)
   , ("wait", wait)
   , ("c", interruptible $ continue >> waitStop)
   ]
