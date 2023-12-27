@@ -27,9 +27,10 @@ import qualified Data.SVD.Pretty.Explore
 import qualified Data.SVD.Util
 
 import EmHell.Completion
+import EmHell.Selector
 import EmHell.SigintHandler
+
 import Options
-import Selector
 
 -- handler
 

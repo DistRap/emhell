@@ -31,8 +31,11 @@ library
                     , haskeline
                     , text
                     , transformers
+                    , unix
   exposed-modules:    EmHell
                     , EmHell.Completion
+                    , EmHell.Selector
+                    , EmHell.SigintHandler
 
   hs-source-dirs:     src
   ghc-options:        -Wall
@@ -40,6 +43,7 @@ library
 
 -- to ghci use cabal new-repl exe:hgdb
 executable hgdb
+  ghc-options:        -Wall
   hs-source-dirs:     app
   main-is:            Main.hs
   other-modules:      Options
@@ -58,4 +62,3 @@ executable hgdb
                     , directory
                     , optparse-applicative
                     , transformers
-                    , unix

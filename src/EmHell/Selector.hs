@@ -1,10 +1,10 @@
 {-# LANGUAGE DeriveFunctor #-}
-module Selector where
+module EmHell.Selector where
 
 import Control.Applicative
-import Data.Char (toLower)
-import Data.Attoparsec.ByteString.Char8
-import qualified Data.ByteString.Char8 as B
+import Data.Attoparsec.Text
+import qualified Data.Text
+import qualified Data.Char
 
 data Selector a = Selector {
     selPeriph :: a
@@ -13,12 +13,21 @@ data Selector a = Selector {
   }
   deriving (Eq, Ord, Show, Functor)
 
+-- | Parse Periph.Reg.Field selector
 selectorParser :: Parser (Selector String)
 selectorParser = do
   p <- takeWhile1 (/='.')
   _ <- char '.'
   r <- takeWhile1 (/='.')
   f <- optional (char '.' *> takeWhile1 (pure True) <* endOfInput)
-  return $ map toLower . B.unpack <$> Selector p r f
+  pure
+    $ map Data.Char.toLower
+    . Data.Text.unpack
+    <$> Selector p r f
 
-parseSelector = parseOnly selectorParser . B.pack
+parseSelector
+  :: String
+  -> Either String (Selector String)
+parseSelector =
+  parseOnly selectorParser
+  . Data.Text.pack

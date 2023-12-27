@@ -28,8 +28,10 @@ parsePort = do
   d <- A.decimal
   return d
 
+hostPort :: A.Parser (String, Int)
 hostPort = (,) <$> parseAddress <*> parsePort
 
+parseProgrammer :: Parser Programmer
 parseProgrammer =
    (BMP <$> strOption (
          long "bmp"
@@ -46,6 +48,7 @@ parseProgrammer =
       <> metavar "HOST:PORT"
       <> help "Use remote GDB server at HOST:PORT"))
 
+parseOptions :: Parser Options
 parseOptions = Options <$>
       optional parseProgrammer
   <*> optional (strOption $
@@ -73,4 +76,9 @@ parseOptions = Options <$>
        <> short 'e'
        <> help "Execute")
 
-runOpts = execParser $ info (parseOptions <**> helper) (fullDesc <> progDesc "hgdb")
+runOpts :: IO Options
+runOpts =
+  execParser
+  $ info
+      (parseOptions <**> helper)
+      (fullDesc <> progDesc "hgdb")
