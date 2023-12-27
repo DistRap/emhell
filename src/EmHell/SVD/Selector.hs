@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveFunctor #-}
-module EmHell.Selector where
+module EmHell.SVD.Selector where
 
 import Control.Applicative
 import Data.Attoparsec.Text

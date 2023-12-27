@@ -1,4 +1,4 @@
-module EmHell.Completion
+module EmHell.SVD.Completion
   ( svdCompleter
   , svdCompleterMay
   , compFunc

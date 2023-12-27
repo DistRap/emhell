@@ -6,7 +6,7 @@ import Prelude hiding (break)
 
 import Data.Bits
 import Data.Default.Class
-import Data.Word
+import Data.Word ()
 import Text.Printf
 
 import Control.Concurrent (threadDelay, forkIO)
@@ -26,9 +26,9 @@ import qualified Data.SVD.IO
 import qualified Data.SVD.Pretty.Explore
 import qualified Data.SVD.Util
 
-import EmHell.Completion
-import EmHell.Selector
 import EmHell.SigintHandler
+import EmHell.SVD.Completion
+import EmHell.SVD.Selector
 
 import Options
 

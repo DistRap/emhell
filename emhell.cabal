@@ -33,9 +33,9 @@ library
                     , transformers
                     , unix
   exposed-modules:    EmHell
-                    , EmHell.Completion
-                    , EmHell.Selector
                     , EmHell.SigintHandler
+                    , EmHell.SVD.Completion
+                    , EmHell.SVD.Selector
 
   hs-source-dirs:     src
   ghc-options:        -Wall
@@ -47,7 +47,6 @@ executable hgdb
   hs-source-dirs:     app
   main-is:            Main.hs
   other-modules:      Options
-                      Selector
 
   build-depends:      base        >= 4 && < 5
                     , attoparsec
