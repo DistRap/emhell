@@ -4,18 +4,14 @@ module Main where
 
 import Prelude hiding (break)
 
-import Data.Bits
 import Data.Default.Class
-import Data.Word ()
-import Text.Printf
-
-import Control.Concurrent (threadDelay, forkIO)
+import Data.Word (Word32)
+import Control.Concurrent (threadDelay)
 import qualified Control.Exception as E
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.State.Strict
-import Control.Monad.Trans.Reader
 
 import System.Console.Repline hiding (options)
 import System.Directory
@@ -49,8 +45,11 @@ main = do
         then armConfig
         else def
       cfg =
-        gdbConfig
-          { confLogfile = optsMILog opts }
+        case gdbConfig of
+          c@Config {} ->
+            c { confLogfile = optsMILog opts }
+          c@ConfigTCP {} ->
+            c { confTCPLogfile = optsMILog opts }
 
   case optsCwd opts of
     Nothing -> pure ()
@@ -70,7 +69,7 @@ main = do
         Right dev ->
           pure $ pure dev
 
-  runGDBConfig cfg $ do
+  _ <- runGDBConfig cfg $ do
     maybe (pure ()) file (optsFile opts)
     maybe (pure ()) extRemote (optsProg opts)
     -- execute extra --ex cli commands
@@ -89,7 +88,7 @@ main = do
 runRepl :: StateT (Maybe Device) (GDBT IO) ()
 runRepl = do
     evalRepl
-      banner
+      banner'
       (replCmd)
       options
       (Just ':')
@@ -98,7 +97,7 @@ runRepl = do
       greeter
       finalizer
   where
-    banner =
+    banner' =
         pure
       . \case
           SingleLine -> "hgdb> "
@@ -133,7 +132,7 @@ replCmd input = lift $ do
                       (selReg sel)
                       dev
                     of
-                      Left e -> error "Absurd"
+                      Left _e -> error "Absurd"
                       Right reg ->
                         liftIO
                           $ Data.SVD.Pretty.Explore.exploreRegister 
@@ -165,7 +164,7 @@ interruptible :: Show b => GDBT IO b -> a -> Repl ()
 interruptible act _args = do
   ctx <- liftGdb getContext
   x <- liftIO $ E.try $ sigintHandler $ runGDBT ctx act
-  case x of
+  _ <- case x of
     Left e -> do
       -- if user hits Ctr-C we propagate it to GDB and wait for stops response
       liftGdb break
