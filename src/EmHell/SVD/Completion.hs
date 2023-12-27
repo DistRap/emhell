@@ -1,6 +1,6 @@
 module EmHell.SVD.Completion
   ( svdCompleter
-  , svdCompleter'
+  , svdCompleterFields
   , svdCompleterMay
   , compFunc
   ) where
@@ -101,6 +101,13 @@ svdCompleter
   -> String
   -> m [String]
 svdCompleter = svdCompleter' False
+
+svdCompleterFields
+  :: Monad m
+  => Device
+  -> String
+  -> m [String]
+svdCompleterFields = svdCompleter' True
 
 nestedCompleter
   :: Monad m
