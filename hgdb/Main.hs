@@ -149,7 +149,7 @@ replCmd input = lift $ do
                       Left _e -> error "Absurd"
                       Right reg ->
                         liftIO
-                          $ Data.SVD.Pretty.Explore.exploreRegister 
+                          $ Data.SVD.Pretty.Explore.exploreRegister
                               (x :: Word32)
                               regAddr
                               reg
