@@ -126,9 +126,12 @@ nestedCompleter' matchFn names input nest = do
         else if "." `Data.List.isPrefixOf` input
              then drop 1 input
              else input
-  -- ouch
-  --let x = trace (show ("zz", xinput)) (return ())
-  --x
+
+  -- To debug
+  -- import Debug.Trace
+  -- let z = trace (show ("zz", xinput)) (pure ())
+  -- z
+
   case
       Data.Text.unpack
       <$> Data.Attoparsec.Text.parseOnly
