@@ -57,7 +57,7 @@ executable emhell
   build-depends:      base >= 4 && < 5
                     , emhell
                     , repline >= 0.4.0.0 && < 0.5
-                    , data-svd
+                    , data-svd >= 0.1.1
                     , optparse-applicative
                     , transformers
 
@@ -72,10 +72,24 @@ executable hgdb
 
   build-depends:      base >= 4 && < 5
                     , emhell
-                    , hgdbmi
+                    , hgdbmi >= 0.3
                     , repline >= 0.4.0.0 && < 0.5
                     , data-default-class
                     , data-svd
                     , directory
+                    , optparse-applicative
+                    , transformers
+
+-- to ghci use cabal new-repl exe:hocd
+executable hocd
+  ghc-options:        -Wall -Wunused-packages
+  hs-source-dirs:     hocd
+  main-is:            Main.hs
+  build-depends:      base >= 4 && < 5
+                    , emhell
+                    , hocd >= 0.1.1.1
+                    , repline >= 0.4.0.0 && < 0.5
+                    , data-default-class
+                    , data-svd
                     , optparse-applicative
                     , transformers

@@ -13,7 +13,7 @@ data Options = Options {
   , optsCwd   :: Maybe FilePath
   , optsArm   :: Bool
   , optsEx    :: [String]
-  } deriving (Show)
+  } deriving Show
 
 parseProgrammer :: Parser Programmer
 parseProgrammer =
