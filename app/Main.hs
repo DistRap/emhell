@@ -1,34 +1,38 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+
 module Main where
 
-import Prelude hiding (break)
-
-import Data.Default.Class
-import Data.Word (Word32)
-import Control.Concurrent (threadDelay)
-import qualified Control.Exception as E
-import Control.Monad
-import Control.Monad.IO.Class
-import Control.Monad.Trans.Class
-import Control.Monad.Trans.State.Strict
-
-import System.Console.Repline hiding (options)
-import System.Directory
-
-import Gdb
+import Control.Exception (SomeException)
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Class (MonadTrans, lift)
+import Control.Monad.Trans.State.Strict (StateT, runStateT, get, put)
+import Data.Default.Class (Default(def))
 import Data.SVD.Types (Device)
+import Data.Word (Word32)
+import EmHell.SVD.Selector (Selector(..))
+import Gdb (Config(..), GDBT)
+import System.Console.Repline
+  ( CompletionFunc
+  , HaskelineT
+  , MultiLine(..)
+  , CompleterStyle(Prefix)
+  , ExitDecision(Exit)
+  )
+
+import qualified Control.Concurrent
+import qualified Control.Exception
+import qualified Control.Monad
 import qualified Data.SVD.IO
 import qualified Data.SVD.Pretty.Explore
 import qualified Data.SVD.Util
-
-import EmHell.SigintHandler
-import EmHell.SVD.Completion
-import EmHell.SVD.Selector
+import qualified EmHell.SigintHandler
+import qualified EmHell.SVD.Completion
+import qualified EmHell.SVD.Selector
+import qualified Gdb
+import qualified System.Console.Repline
+import qualified System.Directory
 
 import Options
-
--- handler
 
 type Repl a =
   HaskelineT
@@ -42,7 +46,7 @@ main = do
 
   let gdbConfig =
         if optsArm opts
-        then armConfig
+        then Gdb.armConfig
         else def
       cfg =
         case gdbConfig of
@@ -53,7 +57,8 @@ main = do
 
   case optsCwd opts of
     Nothing -> pure ()
-    Just pth -> setCurrentDirectory pth
+    Just pth ->
+      System.Directory.setCurrentDirectory pth
 
   dev <- case optsSVD opts of
     Nothing -> pure Nothing
@@ -69,17 +74,18 @@ main = do
         Right dev ->
           pure $ pure dev
 
-  _ <- runGDBConfig cfg $ do
-    maybe (pure ()) file (optsFile opts)
-    maybe (pure ()) extRemote (optsProg opts)
+  _ <- Gdb.runGDBConfig cfg $ do
+    maybe (pure ()) Gdb.file (optsFile opts)
+    maybe (pure ()) Gdb.extRemote (optsProg opts)
     -- execute extra --ex cli commands
-    forM_ (optsEx opts) cli
+    Control.Monad.forM_ (optsEx opts) Gdb.cli
 
-    break
+    Gdb.break
 
     -- to avoid printing prompt during gdb log output
-    liftIO $ threadDelay 1000000
-    void
+    liftIO
+      $ Control.Concurrent.threadDelay 1000000
+    Control.Monad.void
       $ (`runStateT` dev)
       $ runRepl
 
@@ -87,13 +93,21 @@ main = do
 
 runRepl :: StateT (Maybe Device) (GDBT IO) ()
 runRepl = do
-    evalRepl
+    System.Console.Repline.evalRepl
       banner'
       (replCmd)
       options
       (Just ':')
       (Just "paste")
-      (Prefix (\x -> (compFunc $ svdCompleterMay) x ) (defaultMatcher))
+      (Prefix
+        (\x ->
+          ( EmHell.SVD.Completion.compFunc
+            EmHell.SVD.Completion.svdCompleterMay
+          )
+          x
+        )
+        defaultMatcher
+      )
       greeter
       finalizer
   where
@@ -113,16 +127,16 @@ replCmd :: String -> Repl ()
 replCmd input = lift $ do
   svdMay <- get
   case svdMay of
-    Nothing -> lift $ cli input
+    Nothing -> lift $ Gdb.cli input
     Just dev -> do
-      case parseSelector input of
+      case EmHell.SVD.Selector.parseSelector input of
         Left _e -> do
-          lift $ cli input
+          lift $ Gdb.cli input
         Right sel -> do
           case Data.SVD.Util.getPeriphRegAddr (selPeriph sel) (selReg sel) dev of
-            Left e -> lift $ echo e
+            Left e -> lift $ Gdb.echo e
             Right regAddr -> do
-              res <- lift $ readMem regAddr 4
+              res <- lift $ Gdb.readMem regAddr 4
               case res of
                 Nothing -> error "Failed to read memory via GDB"
                 Just x -> do
@@ -141,7 +155,7 @@ replCmd input = lift $ do
                               reg
 
 wait :: String -> Repl ()
-wait _args = liftGdb $ waitStop >>= showStops
+wait _args = liftGdb $ Gdb.waitStop >>= Gdb.showStops
 
 -- Repl command, that loads SVD
 -- and puts @Device@ into repl state
@@ -160,25 +174,33 @@ loadSVD fp = do
     Right d -> lift $ put $ Just d
 
 -- does make sense only when GDB is running, add continue >> act??
-interruptible :: Show b => GDBT IO b -> a -> Repl ()
+interruptible
+  :: Show b
+  => GDBT IO b
+  -> a
+  -> Repl ()
 interruptible act _args = do
-  ctx <- liftGdb getContext
-  x <- liftIO $ E.try $ sigintHandler $ runGDBT ctx act
+  ctx <- liftGdb Gdb.getContext
+  x <-
+    liftIO
+      $ Control.Exception.try
+      $ EmHell.SigintHandler.sigintHandler
+      $ Gdb.runGDBT ctx act
   _ <- case x of
     Left e -> do
       -- if user hits Ctr-C we propagate it to GDB and wait for stops response
-      liftGdb break
+      liftGdb Gdb.break
       -- this used to be, but why
       -- wait []
-      pure $ Left $ show (e :: E.SomeException)
+      pure $ Left $ show (e :: SomeException)
     Right r -> pure $ Right r
 
   pure ()
 
 defaultMatcher :: [(String, CompletionFunc (StateT (Maybe Device) (GDBT IO)))]
 defaultMatcher =
-  [ (":svd", fileCompleter)
-  , (":file", fileCompleter)
+  [ (":svd", System.Console.Repline.fileCompleter)
+  , (":file", System.Console.Repline.fileCompleter)
   ]
 
 liftGdb
@@ -194,7 +216,7 @@ liftGdb fn = lift . lift $ fn
 options :: [(String, String -> Repl ())]
 options = [
     ("svd", loadSVD)
-  , ("file", liftGdb . file)
+  , ("file", liftGdb . Gdb.file)
   , ("wait", wait)
-  , ("c", interruptible $ continue >> waitStop)
+  , ("c", interruptible $ Gdb.continue >> Gdb.waitStop)
   ]
