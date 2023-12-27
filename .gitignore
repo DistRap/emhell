@@ -6,3 +6,4 @@ result*
 .ghc.environment*
 log
 *.log
+.history
