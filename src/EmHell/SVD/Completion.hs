@@ -1,5 +1,6 @@
 module EmHell.SVD.Completion
   ( svdCompleter
+  , svdCompleter'
   , svdCompleterMay
   , compFunc
   ) where
@@ -62,12 +63,13 @@ compFunc f =
     notFinished :: Completion -> Completion
     notFinished x = x { isFinished = False }
 
-svdCompleter
+svdCompleter'
   :: Monad m
-  => Device
+  => Bool -- ^ Complete fields
+  -> Device
   -> String
   -> m [String]
-svdCompleter dev x =
+svdCompleter' completeFields dev x =
   nestedCompleter
     (map
       (periphName)
@@ -79,16 +81,26 @@ svdCompleter dev x =
       nestedCompleter
         (map regName f)
         leftover
-        $ \(complete2, leftover2) -> do
-          let f' = Data.Either.fromRight mempty
-                   $ Data.SVD.getPeriphRegFields
-                       complete
-                       complete2
-                       dev
-          nestedCompleter
-            (map fieldName f')
-            leftover2 $ \_ ->
-              pure mempty
+        $ if not completeFields
+          then \_ -> pure mempty
+          else
+            \(complete2, leftover2) -> do
+              let f' = Data.Either.fromRight mempty
+                       $ Data.SVD.getPeriphRegFields
+                           complete
+                           complete2
+                           dev
+              nestedCompleter
+                (map fieldName f')
+                leftover2
+                $ \_ -> pure mempty
+
+svdCompleter
+  :: Monad m
+  => Device
+  -> String
+  -> m [String]
+svdCompleter = svdCompleter' False
 
 nestedCompleter
   :: Monad m
