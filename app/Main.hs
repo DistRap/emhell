@@ -9,7 +9,7 @@ import Data.Default.Class
 import Data.Word
 import Text.Printf
 
-import Control.Concurrent (threadDelay, myThreadId, throwTo, forkIO)
+import Control.Concurrent (threadDelay, forkIO)
 import qualified Control.Exception as E
 import Control.Monad
 import Control.Monad.IO.Class
@@ -27,13 +27,11 @@ import qualified Data.SVD.Pretty.Explore
 import qualified Data.SVD.Util
 
 import EmHell.Completion
+import EmHell.SigintHandler
 import Options
 import Selector
 
 -- handler
-import System.Posix.Signals (Handler(Catch))
-import qualified Control.Exception
-import qualified System.Posix.Signals
 
 type Repl a =
   HaskelineT
@@ -200,26 +198,3 @@ options = [
   , ("wait", wait)
   , ("c", interruptible $ continue >> waitStop)
   ]
-
-sigintHandler :: IO b -> IO b
-sigintHandler ofWhat = do
-    tid <- Control.Concurrent.myThreadId
-    Control.Exception.bracket
-      (System.Posix.Signals.installHandler
-         System.Posix.Signals.sigINT
-         (Catch
-            $ Control.Exception.throwTo
-                tid
-                Control.Exception.UserInterrupt
-          )
-         Nothing
-      )
-      (\old ->
-         System.Posix.Signals.installHandler
-           System.Posix.Signals.sigINT
-           old
-           Nothing
-      )
-      $ pure ofWhat
-
-
