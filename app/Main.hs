@@ -30,12 +30,17 @@ import Completion
 import Options
 import Selector
 
-type Repl a = HaskelineT (StateT (Maybe Device) (GdbT IO)) a
+-- handler
+import System.Posix.Signals (Handler(Catch))
+import qualified Control.Exception
+import qualified System.Posix.Signals
+
+type Repl a = HaskelineT (StateT (Maybe Device) (GDBT IO)) a
 
 main = do
   opts <- runOpts
 
-  let gdbConfig = if optsArm opts then armConfig else defaultConfig
+  let gdbConfig = if optsArm opts then armConfig else def
       cfg = gdbConfig { confLogfile = optsMILog opts }
 
   case optsCwd opts of
@@ -52,7 +57,7 @@ main = do
         Right dev -> return $ Just dev
 
 
-  runGdbConfig cfg $ do
+  runGDBConfig cfg $ do
     maybe (return ()) file (optsFile opts)
     maybe (return ()) extRemote (optsProg opts)
     forM_ (optsEx opts) $ \x -> cli x
@@ -72,7 +77,7 @@ main = do
     void $ flip runStateT dev $ runRepl
 
 
-runRepl :: StateT (Maybe Device) (GdbT IO) ()
+runRepl :: StateT (Maybe Device) (GDBT IO) ()
 runRepl = do
     evalRepl
       banner
@@ -103,9 +108,23 @@ replCmd input = lift $ do
           case Data.SVD.Util.getPeriphRegAddr (selPeriph sel) (selReg sel) dev of
             Left e -> lift $ echo e
             Right regAddr -> do
-              (Just x) <- lift $ readMem regAddr 4
-              let Right reg = Data.SVD.Util.getPeriphReg (selPeriph sel) (selReg sel) dev
-              liftIO $ Data.SVD.Pretty.Explore.exploreRegister (x :: Word32) regAddr reg
+              res <- lift $ readMem regAddr 4
+              case res of
+                Nothing -> error "Failed to read memory via GDB"
+                Just x -> do
+                  case
+                    Data.SVD.Util.getPeriphReg
+                      (selPeriph sel)
+                      (selReg sel)
+                      dev
+                    of
+                      Left e -> error "Absurd"
+                      Right reg ->
+                        liftIO
+                          $ Data.SVD.Pretty.Explore.exploreRegister 
+                              (x :: Word32)
+                              regAddr
+                              reg
 
 wait :: String -> Repl ()
 wait _args = liftGdb $ waitStop >>= showStops
@@ -119,29 +138,37 @@ loadSVD fp = do
     Right d -> lift $ put $ Just d
 
 -- does make sense only when GDB is running, add continue >> act??
-interruptible :: Show b => GdbT IO b -> a -> Repl ()
+interruptible :: Show b => GDBT IO b -> a -> Repl ()
 interruptible act _args = do
-  ctx <- liftGdb ask
-  x <- liftIO $ E.try $ sigintHandler $ flip runReaderT ctx act
+  ctx <- liftGdb getContext
+  x <- liftIO $ E.try $ sigintHandler $ runGDBT ctx act
   _ <- case x of
     Left e -> do
       -- if user hits Ctr-C we propagate it to GDB and wait for stops response
+      liftIO $ print e
+      liftIO $ print "sending break"
       liftGdb break
-      wait []
+      liftIO $ print "nowait"
+      --wait []
       return $ Left $ show (e :: E.SomeException)
     Right r -> return $ Right r
 
   return ()
 
-defaultMatcher :: [(String, CompletionFunc (StateT (Maybe Device) (GdbT IO)))]
+defaultMatcher :: [(String, CompletionFunc (StateT (Maybe Device) (GDBT IO)))]
 defaultMatcher =
   [ (":svd", fileCompleter)
   , (":file", fileCompleter)
   ]
 
-liftGdb :: (MonadTrans t1, MonadTrans t2, Monad m, Monad (t2 m))
-        => m a
-        -> t1 (t2 m) a
+liftGdb
+  :: ( MonadTrans t1
+     , MonadTrans t2
+     , Monad m
+     , Monad (t2 m)
+     )
+  => m a
+  -> t1 (t2 m) a
 liftGdb fn = lift . lift $ fn
 
 fileArg fn x = liftGdb $ fn x
@@ -153,3 +180,26 @@ options = [
   , ("wait", wait)
   , ("c", interruptible $ continue >> waitStop)
   ]
+
+sigintHandler :: IO b -> IO b
+sigintHandler ofWhat = do
+    tid <- Control.Concurrent.myThreadId
+    Control.Exception.bracket
+      (System.Posix.Signals.installHandler
+         System.Posix.Signals.sigINT
+         (Catch
+            $ Control.Exception.throwTo
+                tid
+                Control.Exception.UserInterrupt
+          )
+         Nothing
+      )
+      (\old ->
+         System.Posix.Signals.installHandler
+           System.Posix.Signals.sigINT
+           old
+           Nothing
+      )
+      $ pure ofWhat
+
+

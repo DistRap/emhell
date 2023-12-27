@@ -3,4 +3,4 @@ packages: .
 source-repository-package
   type: git
   location: https://github.com/DistRap/hgdbmi
-  tag: c6213c28b2d2f4dde3d4d59a0ec245e6293882d2
+  tag: 29511f887b6815e1d6a4db4a23799d5e8b629154

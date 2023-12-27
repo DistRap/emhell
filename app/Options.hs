@@ -40,6 +40,11 @@ parseProgrammer =
          long "bmphosted"
       <> metavar "HOST:PORT"
       <> help "Use hosted BlackMagic Probe at HOST:PORT"))
+ <|>
+   (uncurry RemoteGDB <$> option (attoReadM hostPort) (
+         long "remotegdb"
+      <> metavar "HOST:PORT"
+      <> help "Use remote GDB server at HOST:PORT"))
 
 parseOptions = Options <$>
       optional parseProgrammer
