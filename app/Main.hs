@@ -26,7 +26,7 @@ import qualified Data.SVD.IO
 import qualified Data.SVD.Pretty.Explore
 import qualified Data.SVD.Util
 
-import Completion
+import EmHell.Completion
 import Options
 import Selector
 

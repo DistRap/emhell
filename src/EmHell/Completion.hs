@@ -1,5 +1,5 @@
-module Completion (
-    svdCompleter
+module EmHell.Completion
+  ( svdCompleter
   , svdCompleterMay
   , compFunc
   ) where
