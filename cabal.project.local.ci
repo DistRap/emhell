@@ -1,0 +1,2 @@
+package emhell
+  ghc-options: -Wunused-packages -Wall -Werror
