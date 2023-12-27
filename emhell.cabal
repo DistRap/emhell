@@ -1,7 +1,7 @@
 cabal-version:  2.2
-name:           hgdb
-Synopsis:       Gdb monad and repl
-Description:    Gdb monad built around GDB/MI
+name:           emhell
+Synopsis:       Embedded shell
+Description:    Tooling for register exploration using SVD files and GDB-MI or OpenOCD backends
 category:       Embedded
 version:        0.1
 license:        BSD-3-Clause
@@ -9,18 +9,20 @@ license-file:   LICENSE
 author:         sorki <srk@48.io>
 maintainer:     sorki <srk@48.io>
 stability:      provisional
-homepage:       https://github.com/srk/hgdb
-bug-reports:    https://github.com/srk/hgdb/issues
+homepage:       https://github.com/srk/emhell
+bug-reports:    https://github.com/srk/emhell/issues
 copyright:      (c) 2020 sorki <srk@48.io>
 build-type:     Simple
 extra-source-files:
-    CHANGELOG.md
     LICENSE
     README.md
 
+extra-doc-files:
+    CHANGELOG.md
+
 source-repository head
   type: git
-  location: git://github.com/DistRap/hgdb.git
+  location: git://github.com/DistRap/emhell.git
 
 library
   build-depends:      base        >= 4 && < 5
@@ -43,7 +45,7 @@ executable hgdb
   build-depends:      base        >= 4 && < 5
                     , attoparsec
                     , bytestring
-                    , hgdb
+                    , emhell
                     , hgdbmi
                     , boxes
                     , repline >= 0.4.0.0 && < 0.5

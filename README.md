@@ -1,40 +1,14 @@
-# hgdb
+# emhell
 
-Gdb monad and REPL for reading and decoding registers built
-around [hgdbmi](https://github.com/DistRap/hgdbmi)
+Embedded development could be hell without a good tooling!
 
-## Usage
+## `emhell` application
 
-```haskell
-import Gdb
-
-main :: IO ()
-main = do
-  runGdb $ do
-    file "image"
-    breakpoint $ function_location "example"
-    run
-    stopped <- waitBreak
-    echo $ show stopped
-```
+Provided `emhell` application is a SVD (System View Description) register browser.
 
 ## `hgdb` application
 
-Provided `hgdb` application is a proof of concept register viewer
-utilizing repline for readline REPL allowing ad-hoc inspection
-of embedded targets according to SVD (System View Description) files.
-
-
-You can obtain SVD files from following repositories:
-* [ada2svd](https://github.com/AdaCore/svd2ada/) (contains generic periherals for various Cortex-Ms)
-* [cmsis-svd](https://github.com/posborne/cmsis-svd)
-
-Or from [data-stm32](https://github.com/HaskellEmbedded/data-stm32)
-repository root (ST only) with:
-
-```bash
-nix-build nix -A svdDb
-```
+`hgdb` is a register viewer and a `GDB` frontend.
 
 ### Inspecting registers
 
@@ -76,6 +50,7 @@ Bit 2 SLEEPDEEP
 * `-a | --arm`  to use `arm-none-eabi-gdb`
 * `--bmp DEV` for use with BlackMagicProbe over UART
 * `--bmphosted HOST:PORT` for use with PC hosted BlackMagicProbe (`blackmagic_stlinkv2` binary)
+* `--remotegdb HOST:PORT` for use with remotely running GDB server over TCP (could be OpenOCD provided one)
 
 For full list refer to `hgdb --help`
 
@@ -84,8 +59,7 @@ For full list refer to `hgdb --help`
 * `:svd` - load SVD file, can be used instead of `--svd` arguments or to change current SVD file
 * `:file` - load file to Gdb
 
-All other REPL commands are forward to Gdb as CLI input.
-
+All other REPL commands are forwarded to Gdb as CLI input.
 
 ## Build
 
@@ -93,7 +67,7 @@ Build with Nix via [ivory-tower-nix](https://github.com/HaskellEmbedded/ivory-to
 by running
 
 ```bash
-nix-build -A hgdb
+nix-build -A emhell
 ```
 
 ## Notes
