@@ -4,68 +4,154 @@ module EmHell.Completion
   , compFunc
   ) where
 
-import Control.Applicative
-import Control.Monad.Trans.State.Strict
+import Control.Applicative (optional)
+import Control.Monad.Trans.State.Strict (StateT, get)
 
-import Data.Char (toLower)
-import Data.List (isPrefixOf, stripPrefix)
-import Data.Either
-import Data.Maybe
-import Data.Attoparsec.ByteString.Char8
-import qualified Data.ByteString.Char8 as B
-
+import Data.Attoparsec.Text (Parser)
 import Data.SVD
   ( Device(..)
   , Field(..)
   , Peripheral(..)
   , Register(..)
   )
-import qualified Data.SVD
-
+import Data.Text (Text)
 import System.Console.Haskeline.Completion
+  ( Completion(..)
+  , CompletionFunc
+  )
 
-parsePart :: Parser String
-parsePart = B.unpack <$> takeWhile1 (/='.') <* (optional $ char '.')
+import qualified Data.Attoparsec.Text
+import qualified Data.Char
+import qualified Data.Either
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.SVD
+import qualified Data.Text
+import qualified System.Console.Haskeline.Completion
 
-svdCompleterMay :: Monad m => String -> StateT (Maybe Device) m [String]
+
+parsePart :: Parser Text
+parsePart =
+  Data.Attoparsec.Text.takeWhile1 (/='.')
+  <* (optional $ Data.Attoparsec.Text.char '.')
+
+svdCompleterMay
+  :: Monad m
+  => String
+  -> StateT (Maybe Device) m [String]
 svdCompleterMay x = do
   s <- get
   case s of
-    Nothing -> return []
+    Nothing -> pure mempty
     Just dev -> svdCompleter dev x
 
-compFunc f =  completeWord (Just '\\') " \t()[]" $ \x -> map (notFinished . simpleCompletion) <$> f x
+compFunc
+  :: Monad m
+  => (String -> m [String])
+  -> CompletionFunc m
+compFunc f =
+  System.Console.Haskeline.Completion.completeWord
+    (Just '\\')
+    " \t()[]"
+    $ \x ->
+        map
+          ( notFinished
+          . System.Console.Haskeline.Completion.simpleCompletion
+          )
+          <$> f x
+  where
+    notFinished :: Completion -> Completion
+    notFinished x = x { isFinished = False }
 
--- mark completions as not finished
-neverFinished :: (Monad m) => CompletionFunc m -> CompletionFunc m
-neverFinished c (x, _y) = c (x, []) >>= return . (\(a,b) -> (a, map notFinished b))
+svdCompleter
+  :: Monad m
+  => Device
+  -> String
+  -> m [String]
+svdCompleter dev x =
+  nestedCompleter
+    (map
+      (periphName)
+      $ devicePeripherals dev
+    ) x
+    $ \(complete, leftover) -> do
+      let f = Data.Either.fromRight mempty
+              $ Data.SVD.getPeriphRegs complete dev
+      nestedCompleter
+        (map regName f)
+        leftover
+        $ \(complete2, leftover2) -> do
+          let f' = Data.Either.fromRight mempty
+                   $ Data.SVD.getPeriphRegFields
+                       complete
+                       complete2
+                       dev
+          nestedCompleter
+            (map fieldName f')
+            leftover2 $ \_ ->
+              pure mempty
 
-notFinished x = x { isFinished = False }
+nestedCompleter
+  :: Monad m
+  => [String]
+  -> String
+  -> ((String, String) -> m [String])
+  -> m [String]
+nestedCompleter names input nest =
+  nestedCompleter'
+    (\x ->
+          (Data.List.isPrefixOf x)
+        . map Data.Char.toLower)
+    (map
+      (map Data.Char.toLower) names)
+      input
+    nest
 
-svdCompleter :: Monad m => Device -> String -> m [String]
-svdCompleter dev x = nestedCompleter (map (periphName) $ devicePeripherals dev) x $
-  \(complete, leftover) -> do
-    let f = (fromRight [] $ Data.SVD.getPeriphRegs complete dev)
-    nestedCompleter (map regName f) leftover $
-      \(complete2, leftover2) -> do
-        let f = (fromRight [] $ Data.SVD.getPeriphRegFields complete complete2 dev)
-        nestedCompleter (map fieldName f) leftover2 $ \_ ->
-          return []
-
-nestedCompleter names input nest = nestedCompleter'
-  (\x -> (isPrefixOf x) . map toLower) (map (map toLower) names) input nest
-
+nestedCompleter'
+  :: Monad m
+  => (String -> String -> Bool)
+  -> [String]
+  -> String
+  -> ((String, String) -> m [String])
+  -> m [String]
 nestedCompleter' matchFn names input nest = do
-  let xinput = if input == "." then "" else if "." `isPrefixOf` input then drop 1 input else input
+  let xinput =
+        if input == "."
+        then ""
+        else if "." `Data.List.isPrefixOf` input
+             then drop 1 input
+             else input
   -- ouch
   --let x = trace (show ("zz", xinput)) (return ())
   --x
-  case parseOnly parsePart (B.pack xinput) of
-    Left e -> return names
+  case
+      Data.Text.unpack
+      <$> Data.Attoparsec.Text.parseOnly
+            parsePart
+            (Data.Text.pack xinput)
+    of
+    Left _e -> pure names
+
     Right x | complete x -> do
-      res <- nest (x, (fromJust $ stripPrefix x xinput))
-      return $ map (prefix x) res
-    Right x | otherwise -> return $ filter (matchFn x) names
+      res <-
+        nest
+          ( x
+          , Data.Maybe.fromJust
+            $ x `Data.List.stripPrefix` xinput)
+      pure $ map (prefix x) res
+
+    Right x | otherwise ->
+      pure $ filter (matchFn x) names
+
   where
-    complete x = not . null $ filter (==x) names
-    prefix with x = concat [with, ".", x]
+    complete x =
+        not
+      . null
+      $ filter (==x) names
+
+    prefix with x =
+      concat
+        [ with
+        , "."
+        , x
+        ]

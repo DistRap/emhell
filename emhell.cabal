@@ -27,9 +27,9 @@ source-repository head
 library
   build-depends:      base        >= 4 && < 5
                     , attoparsec
-                    , bytestring
                     , data-svd
                     , haskeline
+                    , text
                     , transformers
   exposed-modules:    EmHell
                     , EmHell.Completion
