@@ -29,7 +29,6 @@ import qualified Data.SVD
 import qualified Data.Text
 import qualified System.Console.Haskeline.Completion
 
-
 parsePart :: Parser Text
 parsePart =
   Data.Attoparsec.Text.takeWhile1 (/='.')
