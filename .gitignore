@@ -7,3 +7,4 @@ result*
 log
 *.log
 .history
+cabal.project.local
