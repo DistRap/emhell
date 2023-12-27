@@ -6,21 +6,23 @@
 
 Embedded development could be hell without a good tooling!
 
-## `emhell` application
+## Applications
 
-`emhell` is a SVD (System View Description) register browser.
+### `emhell`
 
-## `hocd` application
+`emhell` is a SVD (System View Description) register browser
+
+### `hocd`
 
 `hocd` is a register viewer utilizing OpenOCD as a backend
-using [`hocd`](https://github.com/DistRap/hocd).
+using [`hocd`](https://github.com/DistRap/hocd)
 
-## `hgdb` application
+### `hgdb`
 
 `hgdb` is a register viewer and a `GDB` frontend,
-built on top [`hgdbmi`](https://github.com/DistRap/hgdbmi).
+built on top [`hgdbmi`](https://github.com/DistRap/hgdbmi)
 
-### Inspecting registers
+#### Inspecting registers
 
 To use `arm-none-eabi-gdb` with [BlackMagicProbe](https://github.com/blacksphere/blackmagic)
 available via `/dev/bmp` launch `hgdb` in following manner
@@ -52,7 +54,7 @@ Bit 2 SLEEPDEEP
 +-------+---------+-+---------+-----------+-+
 ```
 
-### Command line options
+#### Command line options
 
 * `-e | --ex` behaves like `gdb --ex`
 * `--svd` specifies SVD file to load on start
@@ -64,12 +66,12 @@ Bit 2 SLEEPDEEP
 
 For full list refer to `hgdb --help`
 
-### Internal commands
+#### Internal commands
 
 * `:svd` - load SVD file, can be used instead of `--svd` arguments or to change current SVD file
 * `:file` - load file to Gdb
 
-All other REPL commands are forwarded to Gdb as CLI input.
+All other REPL commands are forwarded to GDB as CLI input.
 
 ## Build
 
@@ -82,11 +84,8 @@ cabal build
 
 ### Using Nix
 
-Build with Nix via [ivory-tower-nix](https://github.com/HaskellEmbedded/ivory-tower-nix/)
-by running
-
 ```bash
-nix-build -A emhell
+nix-build
 ```
 
 ## Notes
