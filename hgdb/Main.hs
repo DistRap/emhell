@@ -93,23 +93,23 @@ main = do
 
 runRepl :: StateT (Maybe Device) (GDBT IO) ()
 runRepl = do
-    System.Console.Repline.evalRepl
-      banner'
-      (replCmd)
-      options
-      (Just ':')
-      (Just "paste")
-      (Prefix
-        (\x ->
-          ( EmHell.SVD.Completion.compFunc
-            EmHell.SVD.Completion.svdCompleterMay
-          )
-          x
+  System.Console.Repline.evalRepl
+    banner'
+    (replCmd)
+    options
+    (Just ':')
+    (Just "paste")
+    (Prefix
+      (\x ->
+        ( EmHell.SVD.Completion.compFunc
+          EmHell.SVD.Completion.svdCompleterMay
         )
-        defaultMatcher
+        x
       )
-      greeter
-      finalizer
+      defaultMatcher
+    )
+    greeter
+    finalizer
   where
     banner' =
         pure
