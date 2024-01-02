@@ -6,4 +6,4 @@ package emhell
 source-repository-package
   type: git
   location: https://github.com/DistRap/hgdbmi
-  tag: 29511f887b6815e1d6a4db4a23799d5e8b629154
+  tag: e7dc8878eea4520d1e132ea917f90ee6afb5aacd
