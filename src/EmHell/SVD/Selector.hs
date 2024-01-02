@@ -43,7 +43,7 @@ selectorValueParser = do
   skipSpace
   _ <- char '='
   skipSpace
-  v <- "0x" *> hexadecimal
+  v <- optional "0x" *> hexadecimal
   pure (s, v)
 
 parseSelector
