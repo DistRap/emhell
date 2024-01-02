@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiWayIf #-}
 module EmHell.SVD.Manipulation
   ( setField
   ) where
@@ -29,24 +30,27 @@ setField r oldRegVal fName v =
     [f] ->
       let maxVal = fromIntegral ((2 :: Int) ^ (f ^. bitWidth) - 1)
       in
-        if v > maxVal
-        then
-          Left
-            $  "Value too large for field "
-            <> f ^. name
-            <> " with bit width of "
-            <> show (f ^. bitWidth)
-            <> "\n"
-            <> "HEX "
-            <> Data.Bits.Pretty.formatHex v
-            <> " ∉ [0.."
-            <> Data.Bits.Pretty.formatHex maxVal
-            <> "]"
-            <> "\n"
-            <> "DEC "
-            <> show v
-            <> " ∉ [0.."
-            <> show maxVal
-            <> "]"
-        else pure $ oldRegVal .|. (v `shiftL` (f ^. bitOffset))
+        if | v > maxVal ->
+              Left
+                $  "Value too large for field "
+                <> f ^. name
+                <> " with bit width of "
+                <> show (f ^. bitWidth)
+                <> "\n"
+                <> "HEX "
+                <> Data.Bits.Pretty.formatHex v
+                <> " ∉ [0.."
+                <> Data.Bits.Pretty.formatHex maxVal
+                <> "]"
+                <> "\n"
+                <> "DEC "
+                <> show v
+                <> " ∉ [0.."
+                <> show maxVal
+                <> "]"
+           | r ^. access == ReadOnly ->
+              Left
+                $ "Register is read-only"
+           | otherwise ->
+              pure $ oldRegVal .|. (v `shiftL` (f ^. bitOffset))
     _ -> Left "Field not found"
