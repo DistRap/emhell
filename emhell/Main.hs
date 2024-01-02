@@ -5,7 +5,7 @@ module Main where
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Reader (ReaderT, runReaderT, ask)
-import Data.SVD.Types (Device)
+import Data.SVD.Types (Device, Register(regResetValue))
 import Data.Word (Word32)
 import EmHell.SVD.Selector (Selector(..))
 import System.Console.Repline
@@ -17,6 +17,7 @@ import System.Console.Repline
   )
 
 import qualified Control.Monad
+import qualified Data.Maybe
 import qualified Data.SVD.IO
 import qualified Data.SVD.Pretty.Explore
 import qualified EmHell.Options
@@ -111,7 +112,7 @@ replCmd input = lift $ do
           Right (reg, regAddr) ->
             liftIO
               $ Data.SVD.Pretty.Explore.exploreRegister
-                  (0 :: Word32)
+                  (resetValueOrZero reg)
                   regAddr
                   reg
 
@@ -135,7 +136,11 @@ setReg input = lift $ do
           Right (reg, regAddr) -> do
             let eNewVal = case selField sel of
                   Just f ->
-                    EmHell.SVD.Manipulation.setField reg 0 f v
+                    EmHell.SVD.Manipulation.setField
+                      reg
+                      (fromIntegral $ resetValueOrZero reg)
+                      f
+                      v
                   Nothing ->
                     pure v
             case eNewVal of
@@ -148,6 +153,13 @@ setReg input = lift $ do
                       reg
 
           Left e -> liftIO $ putStrLn e
+
+resetValueOrZero
+  :: Register
+  -> Int
+resetValueOrZero =
+  Data.Maybe.fromMaybe 0
+  . regResetValue
 
 runOpts :: IO FilePath
 runOpts =
