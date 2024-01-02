@@ -129,8 +129,10 @@ nestedCompleter' matchFn names input nest = do
 
   -- To debug
   -- import Debug.Trace
-  -- let z = trace (show ("zz", xinput)) (pure ())
-  -- z
+  -- traceShowM $
+  --   [ ("Input:", xinput)
+  --   , ("Names:", unwords names)
+  --   ]
 
   case
       Data.Text.unpack
