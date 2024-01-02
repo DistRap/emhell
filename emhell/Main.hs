@@ -20,11 +20,14 @@ import qualified Control.Monad
 import qualified Data.Maybe
 import qualified Data.SVD.IO
 import qualified Data.SVD.Pretty.Explore
+import qualified Data.Text.IO
 import qualified EmHell.Options
 import qualified EmHell.SVD.Completion
 import qualified EmHell.SVD.Query
 import qualified EmHell.SVD.Manipulation
 import qualified EmHell.SVD.Selector
+import qualified Prettyprinter
+import qualified Prettyprinter.Render.Terminal
 import qualified System.Console.Repline
 
 import Options.Applicative
@@ -144,7 +147,13 @@ setReg input = lift $ do
                   Nothing ->
                     pure v
             case eNewVal of
-              Left e -> liftIO $ putStrLn e
+              Left e ->
+                liftIO
+                  . Data.Text.IO.putStrLn
+                  . Prettyprinter.Render.Terminal.renderStrict
+                  $ Prettyprinter.layoutPretty
+                      Prettyprinter.defaultLayoutOptions
+                      e
               Right newVal ->
                 liftIO
                   $ Data.SVD.Pretty.Explore.exploreRegister

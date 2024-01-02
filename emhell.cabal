@@ -37,6 +37,8 @@ library
                     , haskeline
                     , lens
                     , optparse-applicative
+                    , prettyprinter
+                    , prettyprinter-ansi-terminal
                     , text
                     , unix
   exposed-modules:    EmHell
@@ -62,6 +64,9 @@ executable emhell
                     , repline >= 0.4.0.0 && < 0.5
                     , data-svd >= 0.1.1
                     , optparse-applicative
+                    , prettyprinter
+                    , prettyprinter-ansi-terminal
+                    , text
                     , transformers
   default-language:   Haskell2010
 
