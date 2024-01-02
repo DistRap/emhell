@@ -102,5 +102,8 @@ executable hocd
                     , data-default-class
                     , data-svd
                     , optparse-applicative
+                    , prettyprinter
+                    , prettyprinter-ansi-terminal
+                    , text
                     , transformers
   default-language:   Haskell2010

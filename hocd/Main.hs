@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main where
 
@@ -13,18 +14,26 @@ import System.Console.Repline
   ( HaskelineT
   , MultiLine(..)
   , CompleterStyle(Prefix)
+  , CompletionFunc
   , ExitDecision(Exit)
   )
+import Prettyprinter ((<+>), annotate, pretty)
+import Prettyprinter.Render.Terminal (Color(..), bold, color)
 
 import qualified Control.Monad
+import qualified Data.Bits.Pretty
 import qualified Data.Maybe
 import qualified Data.SVD.IO
 import qualified Data.SVD.Pretty.Explore
+import qualified Data.Text.IO
 import qualified EmHell.Options
 import qualified EmHell.SVD.Completion
 import qualified EmHell.SVD.Query
+import qualified EmHell.SVD.Manipulation
 import qualified EmHell.SVD.Selector
 import qualified HOCD
+import qualified Prettyprinter
+import qualified Prettyprinter.Render.Terminal
 import qualified System.Console.Repline
 
 import Options.Applicative
@@ -72,7 +81,7 @@ runRepl = do
   System.Console.Repline.evalRepl
     banner'
     (replCmd)
-    mempty
+    options
     (Just ':')
     (Just "paste")
     completion
@@ -85,6 +94,11 @@ runRepl = do
           SingleLine -> "emhell> "
           MultiLine -> "| "
 
+    options :: [(String, String -> Repl ())]
+    options = [
+        ("set", setReg)
+      ]
+
     completion :: CompleterStyle (ReaderT Device (OCDT IO))
     completion =
        Prefix
@@ -92,7 +106,16 @@ runRepl = do
           $ (ask >>=)
           . flip EmHell.SVD.Completion.svdCompleter
         )
-        mempty
+        defaultMatcher
+
+    defaultMatcher :: [(String, CompletionFunc (ReaderT Device (OCDT IO)))]
+    defaultMatcher =
+      [ ( ":set"
+        , EmHell.SVD.Completion.compFunc
+            $ (ask >>=)
+            . flip EmHell.SVD.Completion.svdCompleterFields
+        )
+      ]
 
     greeter =
       liftIO
@@ -122,6 +145,77 @@ replCmd input = lift $ do
                   regVal
                   regAddr
                   reg
+
+          Left e -> liftIO $ putStrLn e
+
+setReg :: String -> Repl ()
+setReg input = lift $ do
+  dev <- ask
+  case EmHell.SVD.Selector.parseSelectorValue input of
+    Left e ->
+      liftIO
+        $ putStrLn
+        $ "No parse " <> e
+    Right (sel, v) ->
+      case
+          EmHell.SVD.Query.getRegWithAddr
+            (selPeriph sel)
+            (selReg sel)
+            dev
+        of
+          Right (reg, regAddr) -> do
+            let regMemAddr =
+                  HOCD.memAddr
+                  $ fromIntegral regAddr
+
+            origRegVal <-
+              lift $ HOCD.readMem32 regMemAddr
+
+            let eNewVal = case selField sel of
+                  Just f ->
+                    EmHell.SVD.Manipulation.setField
+                      reg
+                      origRegVal
+                      f
+                      v
+                  Nothing ->
+                    pure v
+            case eNewVal of
+              Left e ->
+                liftIO
+                  . Data.Text.IO.putStrLn
+                  . Prettyprinter.Render.Terminal.renderStrict
+                  $ Prettyprinter.layoutPretty
+                      Prettyprinter.defaultLayoutOptions
+                      e
+              Right newVal -> do
+                liftIO
+                  . Data.Text.IO.putStrLn
+                  . Prettyprinter.Render.Terminal.renderStrict
+                  $ Prettyprinter.layoutPretty
+                      Prettyprinter.defaultLayoutOptions
+                      (annotate
+                        (bold <> color Green)
+                        (   "Writing"
+                        <+> pretty (Data.Bits.Pretty.formatHex newVal)
+                        <+> "to"
+                        <+> pretty (selPeriph sel)
+                        <>  "."
+                        <>  pretty (selReg sel)
+                        )
+                      )
+                lift
+                  $ HOCD.writeMem32
+                      regMemAddr
+                      [newVal]
+
+                newRegVal <- lift $ HOCD.readMem32 regMemAddr
+
+                liftIO
+                  $ Data.SVD.Pretty.Explore.exploreRegister
+                      newRegVal
+                      regAddr
+                      reg
 
           Left e -> liftIO $ putStrLn e
 
