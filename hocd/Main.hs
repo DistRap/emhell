@@ -119,7 +119,7 @@ runRepl = do
 
     greeter =
       liftIO
-      $ putStrLn "Welcome to emhell"
+      $ putStrLn "Welcome to hocd"
 
     finalizer = pure Exit
 
@@ -248,4 +248,4 @@ runOpts =
   execParser
   $ info
       (parseOptions <**> helper)
-      (fullDesc <> progDesc "emhell")
+      (fullDesc <> progDesc "hocd")
