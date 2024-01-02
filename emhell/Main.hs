@@ -57,13 +57,7 @@ runRepl = do
     options
     (Just ':')
     (Just "paste")
-    (Prefix
-      ( EmHell.SVD.Completion.compFunc
-        $ (ask >>=)
-        . flip EmHell.SVD.Completion.svdCompleter
-      )
-      defaultMatcher
-    )
+    completion
     greeter
     finalizer
   where
@@ -72,6 +66,29 @@ runRepl = do
       . \case
           SingleLine -> "emhell> "
           MultiLine -> "| "
+
+    options :: [(String, String -> Repl ())]
+    options = [
+        ("set", setReg)
+      ]
+
+    completion :: CompleterStyle (ReaderT Device IO)
+    completion =
+      Prefix
+        ( EmHell.SVD.Completion.compFunc
+          $ (ask >>=)
+          . flip EmHell.SVD.Completion.svdCompleter
+        )
+        defaultMatcher
+
+    defaultMatcher :: [(String, CompletionFunc (ReaderT Device IO))]
+    defaultMatcher =
+      [ ( ":set"
+        , EmHell.SVD.Completion.compFunc
+            $ (ask >>=)
+            . flip EmHell.SVD.Completion.svdCompleterFields
+        )
+      ]
 
     greeter =
       liftIO
@@ -99,20 +116,6 @@ replCmd input = lift $ do
                   reg
 
           Left e -> liftIO $ putStrLn e
-
-defaultMatcher :: [(String, CompletionFunc (ReaderT Device IO))]
-defaultMatcher =
-  [ ( ":set"
-    , EmHell.SVD.Completion.compFunc
-        $ (ask >>=)
-        . flip EmHell.SVD.Completion.svdCompleterFields
-    )
-  ]
-
-options :: [(String, String -> Repl ())]
-options = [
-    ("set", setReg)
-  ]
 
 setReg :: String -> Repl ()
 setReg input = lift $ do
