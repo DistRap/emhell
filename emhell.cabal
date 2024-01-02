@@ -35,6 +35,7 @@ library
                     , attoparsec
                     , data-svd
                     , haskeline
+                    , lens
                     , optparse-applicative
                     , text
                     , unix
@@ -44,6 +45,7 @@ library
                     , EmHell.SigintHandler
                     , EmHell.SVD.Completion
                     , EmHell.SVD.Query
+                    , EmHell.SVD.Manipulation
                     , EmHell.SVD.Selector
 
   hs-source-dirs:     src

@@ -12,6 +12,7 @@ import System.Console.Repline
   ( HaskelineT
   , MultiLine(..)
   , CompleterStyle(Prefix)
+  , CompletionFunc
   , ExitDecision(Exit)
   )
 
@@ -21,6 +22,7 @@ import qualified Data.SVD.Pretty.Explore
 import qualified EmHell.Options
 import qualified EmHell.SVD.Completion
 import qualified EmHell.SVD.Query
+import qualified EmHell.SVD.Manipulation
 import qualified EmHell.SVD.Selector
 import qualified System.Console.Repline
 
@@ -52,7 +54,7 @@ runRepl = do
   System.Console.Repline.evalRepl
     banner'
     (replCmd)
-    mempty
+    options
     (Just ':')
     (Just "paste")
     (Prefix
@@ -60,7 +62,7 @@ runRepl = do
         $ (ask >>=)
         . flip EmHell.SVD.Completion.svdCompleter
       )
-      mempty
+      defaultMatcher
     )
     greeter
     finalizer
@@ -95,6 +97,53 @@ replCmd input = lift $ do
                   (0 :: Word32)
                   regAddr
                   reg
+
+          Left e -> liftIO $ putStrLn e
+
+defaultMatcher :: [(String, CompletionFunc (ReaderT Device IO))]
+defaultMatcher =
+  [ ( ":set"
+    , EmHell.SVD.Completion.compFunc
+        $ (ask >>=)
+        . flip EmHell.SVD.Completion.svdCompleterFields
+    )
+  ]
+
+options :: [(String, String -> Repl ())]
+options = [
+    ("set", setReg)
+  ]
+
+setReg :: String -> Repl ()
+setReg input = lift $ do
+  dev <- ask
+  case EmHell.SVD.Selector.parseSelectorValue input of
+    Left e ->
+      liftIO
+        $ putStrLn
+        $ "No parse " <> e
+    Right (sel, v) ->
+      case
+          EmHell.SVD.Query.getRegWithAddr
+            (selPeriph sel)
+            (selReg sel)
+            dev
+        of
+          Right (reg, regAddr) -> do
+            let eNewVal = case selField sel of
+                  Just f ->
+                    EmHell.SVD.Manipulation.setField reg 0 f v
+                  Nothing ->
+                    pure v
+            case eNewVal of
+              Left e -> liftIO $ putStrLn e
+              Right newVal ->
+                liftIO
+                  $ Data.SVD.Pretty.Explore.exploreRegister
+                      (newVal :: Word32)
+                      regAddr
+                      reg
+
           Left e -> liftIO $ putStrLn e
 
 runOpts :: IO FilePath
