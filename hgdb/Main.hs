@@ -24,9 +24,9 @@ import qualified Control.Exception
 import qualified Control.Monad
 import qualified Data.SVD.IO
 import qualified Data.SVD.Pretty.Explore
-import qualified Data.SVD.Util
 import qualified EmHell.SigintHandler
 import qualified EmHell.SVD.Completion
+import qualified EmHell.SVD.Query
 import qualified EmHell.SVD.Selector
 import qualified Gdb
 import qualified System.Console.Repline
@@ -100,11 +100,8 @@ runRepl = do
     (Just ':')
     (Just "paste")
     (Prefix
-      (\x ->
-        ( EmHell.SVD.Completion.compFunc
-          svdCompleterMay
-        )
-        x
+      (EmHell.SVD.Completion.compFunc
+         svdCompleterMay
       )
       defaultMatcher
     )
@@ -144,26 +141,24 @@ replCmd input = lift $ do
         Left _e -> do
           lift $ Gdb.cli input
         Right sel -> do
-          case Data.SVD.Util.getPeriphRegAddr (selPeriph sel) (selReg sel) dev of
-            Left e -> lift $ Gdb.echo e
-            Right regAddr -> do
-              res <- lift $ Gdb.readMem regAddr 4
-              case res of
-                Nothing -> error "Failed to read memory via GDB"
-                Just x -> do
-                  case
-                    Data.SVD.Util.getPeriphReg
-                      (selPeriph sel)
-                      (selReg sel)
-                      dev
-                    of
-                      Left _e -> error "Absurd"
-                      Right reg ->
-                        liftIO
-                          $ Data.SVD.Pretty.Explore.exploreRegister
-                              (x :: Word32)
-                              regAddr
-                              reg
+          case
+              EmHell.SVD.Query.getRegWithAddr
+                (selPeriph sel)
+                (selReg sel)
+                dev
+            of
+              Left e -> lift $ Gdb.echo e
+              Right (reg, regAddr) -> do
+                res <- lift $ Gdb.readMem regAddr 4
+                case res of
+                  Nothing ->
+                    lift $ Gdb.echo "Failed to read memory via GDB"
+                  Just x -> do
+                    liftIO
+                      $ Data.SVD.Pretty.Explore.exploreRegister
+                          (x :: Word32)
+                          regAddr
+                          reg
 
 wait :: String -> Repl ()
 wait _args = liftGdb $ Gdb.waitStop >>= Gdb.showStops

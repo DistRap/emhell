@@ -43,6 +43,7 @@ library
                     , EmHell.Parsers
                     , EmHell.SigintHandler
                     , EmHell.SVD.Completion
+                    , EmHell.SVD.Query
                     , EmHell.SVD.Selector
 
   hs-source-dirs:     src

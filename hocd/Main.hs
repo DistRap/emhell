@@ -20,9 +20,9 @@ import qualified Control.Monad
 import qualified Data.Maybe
 import qualified Data.SVD.IO
 import qualified Data.SVD.Pretty.Explore
-import qualified Data.SVD.Util
 import qualified EmHell.Options
 import qualified EmHell.SVD.Completion
+import qualified EmHell.SVD.Query
 import qualified EmHell.SVD.Selector
 import qualified HOCD
 import qualified System.Console.Repline
@@ -76,11 +76,9 @@ runRepl = do
     (Just ':')
     (Just "paste")
     (Prefix
-      (\x ->
-        ( EmHell.SVD.Completion.compFunc
-          (\i -> ask >>= \dev -> EmHell.SVD.Completion.svdCompleter dev i)
-        )
-        x
+      ( EmHell.SVD.Completion.compFunc
+        $ (ask >>=)
+        . flip EmHell.SVD.Completion.svdCompleter
       )
       mempty
     )
@@ -106,17 +104,12 @@ replCmd input = lift $ do
     Left _e -> pure ()
     Right sel ->
       case
-        ( Data.SVD.Util.getPeriphRegAddr
+          EmHell.SVD.Query.getRegWithAddr
             (selPeriph sel)
             (selReg sel)
             dev
-        , Data.SVD.Util.getPeriphReg
-            (selPeriph sel)
-            (selReg sel)
-            dev
-        )
         of
-          (Right regAddr, Right reg) -> do
+          Right (reg, regAddr) -> do
             regVal <- lift
               . HOCD.readMem32
               . HOCD.memAddr
@@ -126,7 +119,8 @@ replCmd input = lift $ do
                   regVal
                   regAddr
                   reg
-          _ -> error "Absurd"
+
+          Left e -> liftIO $ putStrLn e
 
 data Options = Options
   { optsSVD :: FilePath
