@@ -99,12 +99,7 @@ runRepl = do
     options
     (Just ':')
     (Just "paste")
-    (Prefix
-      (EmHell.SVD.Completion.compFunc
-         svdCompleterMay
-      )
-      defaultMatcher
-    )
+    completion
     greeter
     finalizer
   where
@@ -114,11 +109,21 @@ runRepl = do
           SingleLine -> "hgdb> "
           MultiLine -> "| "
 
-    greeter =
-      liftIO
-      $ putStrLn "Welcome to hgdb"
+    options :: [(String, String -> Repl ())]
+    options = [
+        ("svd", loadSVD)
+      , ("file", liftGdb . Gdb.file)
+      , ("wait", wait)
+      , ("c", interruptible $ Gdb.continue >> Gdb.waitStop)
+      ]
 
-    finalizer = pure Exit
+    completion :: CompleterStyle (StateT (Maybe Device) (GDBT IO))
+    completion =
+      Prefix
+        (EmHell.SVD.Completion.compFunc
+           svdCompleterMay
+        )
+        defaultMatcher
 
     svdCompleterMay
       :: Monad m
@@ -130,6 +135,18 @@ runRepl = do
         Nothing -> pure mempty
         Just dev ->
           EmHell.SVD.Completion.svdCompleter dev x
+
+    defaultMatcher :: [(String, CompletionFunc (StateT (Maybe Device) (GDBT IO)))]
+    defaultMatcher =
+      [ (":svd", System.Console.Repline.fileCompleter)
+      , (":file", System.Console.Repline.fileCompleter)
+      ]
+
+    greeter =
+      liftIO
+      $ putStrLn "Welcome to hgdb"
+
+    finalizer = pure Exit
 
 replCmd :: String -> Repl ()
 replCmd input = lift $ do
@@ -203,12 +220,6 @@ interruptible act _args = do
 
   pure ()
 
-defaultMatcher :: [(String, CompletionFunc (StateT (Maybe Device) (GDBT IO)))]
-defaultMatcher =
-  [ (":svd", System.Console.Repline.fileCompleter)
-  , (":file", System.Console.Repline.fileCompleter)
-  ]
-
 liftGdb
   :: ( MonadTrans t1
      , MonadTrans t2
@@ -218,11 +229,3 @@ liftGdb
   => m a
   -> t1 (t2 m) a
 liftGdb fn = lift . lift $ fn
-
-options :: [(String, String -> Repl ())]
-options = [
-    ("svd", loadSVD)
-  , ("file", liftGdb . Gdb.file)
-  , ("wait", wait)
-  , ("c", interruptible $ Gdb.continue >> Gdb.waitStop)
-  ]
