@@ -75,13 +75,7 @@ runRepl = do
     mempty
     (Just ':')
     (Just "paste")
-    (Prefix
-      ( EmHell.SVD.Completion.compFunc
-        $ (ask >>=)
-        . flip EmHell.SVD.Completion.svdCompleter
-      )
-      mempty
-    )
+    completion
     greeter
     finalizer
   where
@@ -90,6 +84,15 @@ runRepl = do
       . \case
           SingleLine -> "emhell> "
           MultiLine -> "| "
+
+    completion :: CompleterStyle (ReaderT Device (OCDT IO))
+    completion =
+       Prefix
+        ( EmHell.SVD.Completion.compFunc
+          $ (ask >>=)
+          . flip EmHell.SVD.Completion.svdCompleter
+        )
+        mempty
 
     greeter =
       liftIO
