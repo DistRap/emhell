@@ -91,7 +91,7 @@ runRepl = do
     banner' =
         pure
       . \case
-          SingleLine -> "emhell> "
+          SingleLine -> "hocd> "
           MultiLine -> "| "
 
     options :: [(String, String -> Repl ())]
