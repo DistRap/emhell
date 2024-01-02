@@ -1,6 +1,12 @@
 {-# LANGUAGE DeriveFunctor #-}
-module EmHell.SVD.Selector where
+{-# LANGUAGE OverloadedStrings #-}
+module EmHell.SVD.Selector
+  ( Selector(..)
+  , parseSelector
+  , parseSelectorValue
+  ) where
 
+import Data.Bits (Bits)
 import Control.Applicative
 import Data.Attoparsec.Text
 import qualified Data.Text
@@ -13,21 +19,46 @@ data Selector a = Selector {
   }
   deriving (Eq, Ord, Show, Functor)
 
+nameParser :: Parser String
+nameParser = many1 (letter <|> digit <> char '_')
+
 -- | Parse Periph.Reg.Field selector
 selectorParser :: Parser (Selector String)
 selectorParser = do
-  p <- takeWhile1 (/='.')
+  p <- nameParser
   _ <- char '.'
-  r <- takeWhile1 (/='.')
-  f <- optional (char '.' *> takeWhile1 (pure True) <* endOfInput)
+  r <- nameParser
+  f <- optional (char '.' *> nameParser)
   pure
     $ map Data.Char.toLower
-    . Data.Text.unpack
     <$> Selector p r f
+
+selectorValueParser
+  :: ( Integral a
+     , Bits a
+     )
+  => Parser (Selector String, a)
+selectorValueParser = do
+  s <- selectorParser
+  skipSpace
+  _ <- char '='
+  skipSpace
+  v <- "0x" *> hexadecimal
+  pure (s, v)
 
 parseSelector
   :: String
   -> Either String (Selector String)
 parseSelector =
   parseOnly selectorParser
+  . Data.Text.pack
+
+parseSelectorValue
+  :: ( Integral a
+     , Bits a
+     )
+  => String
+  -> Either String (Selector String, a)
+parseSelectorValue =
+  parseOnly selectorValueParser
   . Data.Text.pack
