@@ -63,9 +63,13 @@ setField r oldRegVal fName v =
                      <> "]"
                     )
                 ]
-           | r ^. access == ReadOnly ->
+           | r ^. access `elem` [ReadOnly, ReadWriteOnce, WriteOnce] ->
               Left
-                $ annotate (color Red) "Register is read-only"
+                $ annotate
+                    (color Red)
+                    (   "Register is"
+                    <+> pretty (showAccessType (r ^. access))
+                    )
            | f ^. reserved ->
               Left
                 $ annotate (color Red) "Field is reserved"
