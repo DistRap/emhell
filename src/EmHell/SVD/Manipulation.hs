@@ -66,6 +66,9 @@ setField r oldRegVal fName v =
            | r ^. access == ReadOnly ->
               Left
                 $ annotate (color Red) "Register is read-only"
+           | f ^. reserved ->
+              Left
+                $ annotate (color Red) "Field is reserved"
            | otherwise ->
               pure $
                 let pos = f ^. bitOffset
