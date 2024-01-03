@@ -12,10 +12,26 @@ Embedded development could be hell without a good tooling!
 
 `emhell` is a SVD (System View Description) register browser
 
+#### Commands
+
+* `:set` - Set register field (for example `:set uart4.brr.div_mantissa = 0x123`)
+  Since `emhell` has no backend, it simply renders the altered register.
+
 ### `hocd`
 
 `hocd` is a register viewer utilizing OpenOCD as a backend
 using [`hocd`](https://github.com/DistRap/hocd)
+
+#### Commands
+
+* `:set` - Set register field (for example `:set gpioa.odr.odr5 = 1`)
+  Alters current register value with hexadecimal field value
+  and writes new register value to memory.
+* `:halt` - Halts target
+* `:reset` - Resets target
+* `:resume` - Resumes execution
+* `:step` - Single-steps target
+* `:version` - Print OpenOCD version
 
 ### `hgdb`
 
@@ -66,10 +82,10 @@ Bit 2 SLEEPDEEP
 
 For full list refer to `hgdb --help`
 
-#### Internal commands
+#### Commands
 
-* `:svd` - load SVD file, can be used instead of `--svd` arguments or to change current SVD file
-* `:file` - load file to Gdb
+* `:svd` - Load SVD file, can be used instead of `--svd` arguments or to change current SVD file
+* `:file` - Load file to Gdb
 
 All other REPL commands are forwarded to GDB as CLI input.
 
