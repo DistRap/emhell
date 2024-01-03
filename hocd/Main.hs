@@ -22,6 +22,7 @@ import Prettyprinter.Render.Terminal (Color(..), bold, color)
 
 import qualified Control.Monad
 import qualified Data.Bits.Pretty
+import qualified Data.ByteString.Char8
 import qualified Data.Maybe
 import qualified Data.SVD.IO
 import qualified Data.SVD.Pretty.Explore
@@ -96,7 +97,8 @@ runRepl = do
 
     options :: [(String, String -> Repl ())]
     options = [
-        ("set", setReg)
+        ("halt", halt)
+      , ("set", setReg)
       ]
 
     completion :: CompleterStyle (ReaderT Device (OCDT IO))
@@ -147,6 +149,15 @@ replCmd input = lift $ do
                   reg
 
           Left e -> liftIO $ putStrLn e
+
+halt :: String -> Repl ()
+halt _ = do
+ out <- lift $ HOCD.halt
+ case out of
+  "" -> pure ()
+  x ->
+    liftIO
+      $ Data.ByteString.Char8.putStr x
 
 setReg :: String -> Repl ()
 setReg input = lift $ do

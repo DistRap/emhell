@@ -100,6 +100,7 @@ executable hocd
   main-is:            Main.hs
   build-depends:      base >= 4 && < 5
                     , emhell
+                    , bytestring
                     , hocd >= 0.1.1.1
                     , repline >= 0.4.0.0 && < 0.5
                     , data-default-class
