@@ -5,7 +5,7 @@ module EmHell.SVD.Manipulation
   ) where
 
 import Control.Lens ((^.), view)
-import Data.Bits (Bits, (.|.), shiftL)
+import Data.Bits (Bits, (.|.), (.&.), complement, shiftL)
 import Data.SVD
 import Prettyprinter
 import Prettyprinter.Render.Terminal (AnsiStyle, Color(..), bold, color)
@@ -67,5 +67,10 @@ setField r oldRegVal fName v =
               Left
                 $ annotate (color Red) "Register is read-only"
            | otherwise ->
-              pure $ oldRegVal .|. (v `shiftL` (f ^. bitOffset))
+              pure $
+                let pos = f ^. bitOffset
+                    val = v `shiftL` pos
+                    fmax = 2 ^ (f ^. bitWidth) - 1
+                    mask = complement (fmax `shiftL` pos)
+                in oldRegVal .&. mask .|. val
     _ -> Left "Field not found"
