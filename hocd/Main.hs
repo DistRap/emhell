@@ -98,7 +98,11 @@ runRepl = do
     options :: [(String, String -> Repl ())]
     options = [
         ("halt", halt)
+      , ("reset", pure . lift $ HOCD.reset)
+      , ("resume", pure . lift $ HOCD.resume)
       , ("set", setReg)
+      , ("step", pure . lift $ HOCD.step)
+      , ("version", version)
       ]
 
     completion :: CompleterStyle (ReaderT Device (OCDT IO))
@@ -229,6 +233,11 @@ setReg input = lift $ do
                       reg
 
           Left e -> liftIO $ putStrLn e
+
+version :: String -> Repl ()
+version _ =
+  lift $ HOCD.version
+  >>= liftIO . Data.ByteString.Char8.putStrLn
 
 data Options = Options
   { optsSVD :: FilePath
